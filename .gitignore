@@ -39,3 +39,11 @@ luac.out
 *.x86_64
 *.hex
 
+# WoW Specific
+*.bak
+*.old
+SavedVariables/
+Logs/
+# OS Specific
+.DS_Store
+Thumbs.db
