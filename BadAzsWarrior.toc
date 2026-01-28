@@ -1,0 +1,9 @@
+## Interface: 11200
+## Title: [|cff355E3BB|r]adAzs |cff32CD32Warrior|r
+## Notes: Battle Analysis Driven Assistant Zmart System for Turtle WoW.
+## Author: ThePeregris
+## Version: 1.0
+## SavedVariables: BadAzsDB
+## OptionalDeps: ItemRack, SP_SwingTimer, UnitXP_SP3_Addon
+
+BadAzsCore.lua
