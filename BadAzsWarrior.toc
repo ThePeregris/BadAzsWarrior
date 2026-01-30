@@ -6,4 +6,4 @@
 ## SavedVariables: BadAzsDB
 ## OptionalDeps: ItemRack, SP_SwingTimer, UnitXP_SP3_Addon
 
-BadAzsCore.lua
+BadAzsWarrior.lua
