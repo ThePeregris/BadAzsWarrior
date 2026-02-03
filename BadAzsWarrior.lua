@@ -1,9 +1,9 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris
--- Version: 12.3 (Charge Logic Fix)
+-- Version: 13.0 (Dual Mode: Slam vs HS)
 -- Target:  Turtle WoW (1.12.1)
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v12.3 - Charge Fix]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v13.0 - Dual Mode]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
@@ -17,7 +17,10 @@ local BadAzsSets = { TwoHand = "TH", DualWield = "DW", Shield = "WS" }
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:SetScript("OnEvent", function()
-    if not BadAzsDB then BadAzsDB = { UseItemRack = false } end
+    -- Configuração Padrão: ItemRack OFF, Modo SLAM
+    if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
+    if not BadAzsDB.DumpMode then BadAzsDB.DumpMode = "SLAM" end
+    
     local block = {
         "fail", "not ready", "enough rage", "Another action", "range", 
         "No target", "recovered", "Ability", "Must be in", "nothing to attack", 
@@ -38,6 +41,7 @@ loadFrame:SetScript("OnEvent", function()
         end
     end
     DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion)
+    DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[Mode]|r: " .. BadAzsDB.DumpMode .. " Focus")
 end)
 
 local SpellCache = {}
@@ -126,10 +130,12 @@ function BadAzsTank()
     end
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
     BadAzs_Cast("Revenge"); BadAzs_Cast("Sunder Armor") 
-    if rage > 50 then BadAzs_Cast("Heroic Strike") end
+    
+    -- Tank prefere HS por padrão, mas respeita a config se quiser
+    if rage > 40 then BadAzs_Cast("Heroic Strike") end
 end
 
--- [[ ARMS (FIXED CHARGE) ]]
+-- [[ ARMS (DUAL MODE) ]]
 function BadAzsArms() 
     if not attacking then AttackTarget() end 
     UIErrorsFrame:Clear()
@@ -139,28 +145,21 @@ function BadAzsArms()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
 
-    -- [[ GAP CLOSER (CHARGE) FIX ]]
-    -- Só tenta se: Fora de Combate + Longe + Charge Pronto
+    -- Gap Closer (Fixed v12.3)
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
-        if stance ~= 1 then 
-            BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH")
-            return -- Return necessário para troca de postura
-        else 
-            BadAzs_Cast("Charge") 
-            -- SEM RETURN AQUI: Se falhar (distância), continua o script.
-        end
+        if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        else BadAzs_Cast("Charge") end
     end
 
-    -- Intercept (Safety CTRL)
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
         if stance ~= 3 then BadAzs_Cast("Berserker Stance") else BadAzs_Cast("Intercept") end
         return
     end
 
-    -- Fase Execute
+    -- FASE EXECUTE (PRIORIDADE ABSOLUTA)
     if thp <= 20 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzs_Cast("Execute") end
-        return
+        return -- Retorna para garantir que NENHUMA raiva seja gasta em Slam/HS
     end
 
     if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
@@ -179,24 +178,36 @@ function BadAzsArms()
     for i=1,16 do local t = UnitDebuff("target", i); if t and string.find(t, "Ability_Gouge") then hasRend=true break end end
     if not hasRend and thp > 20 then BadAzs_Cast("Rend") end
 
-    -- Slam Anti-Clip (3.0s)
+    -- [[ LÓGICA DE DUMP: DUAL MODE ]]
+    -- Define os limites (Thresholds) baseado no modo escolhido
+    local slam_thresh = 15 -- Custo base
+    local hs_thresh = 60   -- Custo de "desperdício"
+    
+    if BadAzsDB.DumpMode == "HS" then
+        slam_thresh = 50 -- Só usa Slam se tiver MUITA raiva
+        hs_thresh = 35   -- Usa HS agressivamente
+    end
+
+    -- 1. Tenta Slam (Respeitando o modo)
     local timeNow = GetTime()
     if (timeNow - LastSlamTime) > 3.0 then
         if SP_ST_Data and SP_ST_Data.main_start then
             local swing = timeNow - SP_ST_Data.main_start
-            if rage > 15 and swing < 1.0 then 
+            if rage > slam_thresh and swing < 1.0 then 
                 BadAzs_Cast("Slam"); LastSlamTime = timeNow 
             end
-        elseif rage > 25 then 
+        elseif rage > (slam_thresh + 10) then 
             BadAzs_Cast("Slam"); LastSlamTime = timeNow 
         end
     end
 
-    if rage > 60 then BadAzs_Cast("Heroic Strike") end
+    -- 2. Tenta HS (Respeitando o modo)
+    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
+    
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
--- [[ FURY (FIXED CHARGE) ]]
+-- [[ FURY (DUAL MODE) ]]
 function BadAzsFury() 
     if not attacking then AttackTarget() end 
     UIErrorsFrame:Clear() 
@@ -205,14 +216,9 @@ function BadAzsFury()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
     
-    -- Gap Closer Fix
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
-        if stance ~= 1 then 
-            BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH")
-            return
-        else 
-            BadAzs_Cast("Charge") 
-        end
+        if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        else BadAzs_Cast("Charge") end
     end
 
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
@@ -230,7 +236,7 @@ function BadAzsFury()
     BadAzs_Cast("Victory Rush"); BadAzs_Cast("Blood Fury"); BadAzs_Cast("Berserking")
 
     local thp = UnitHealth("target")/UnitHealthMax("target")*100
-    if thp <= 20 then BadAzs_Cast("Execute"); return end
+    if thp <= 20 then BadAzs_Cast("Execute"); return end -- Prioridade Absoluta
     
     if BadAzs_Ready("Bloodthirst") then BadAzs_Cast("Bloodthirst") 
     elseif BadAzs_Ready("Mortal Strike") then BadAzs_Cast("Mortal Strike") end
@@ -238,7 +244,11 @@ function BadAzsFury()
     if BadAzs_Ready("Whirlwind") then BadAzs_Cast("Whirlwind") end
     if BadAzs_Ready("Master Strike") then BadAzs_Cast("Master Strike") end
     
-    if rage > 60 then BadAzs_Cast("Heroic Strike") end
+    -- Fury geralmente prefere HS, mas respeita a configuração
+    local hs_thresh = 60
+    if BadAzsDB.DumpMode == "HS" then hs_thresh = 40 end
+
+    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
@@ -260,7 +270,7 @@ function BadAzsCrowd()
 end
 
 -- ============================================================
--- [3. SLASH COMMANDS]
+-- [3. SLASH COMMANDS E CONTROLES]
 -- ============================================================
 function BadAzs_ArmsWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsArms() end end
 function BadAzs_FuryWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsFury() end end
@@ -268,17 +278,32 @@ function BadAzs_FuryWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsFu
 SLASH_BADAZSCMD1 = "/badazs"
 SlashCmdList["BADAZSCMD"] = function(msg)
     msg = string.lower(msg)
+    
+    -- Switch ITEMRACK
     if string.find(msg, "itemrack on") then
         BadAzsDB.UseItemRack = true
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r ItemRack: |cff00ff00LIGADO|r")
     elseif string.find(msg, "itemrack off") then
         BadAzsDB.UseItemRack = false
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r ItemRack: |cffff0000DESLIGADO|r")
+    
+    -- Switch MODE (SLAM vs HS)
+    elseif string.find(msg, "mode slam") then
+        BadAzsDB.DumpMode = "SLAM"
+        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r Prioridade: |cff00ccffSLAM FOCUS|r")
+    elseif string.find(msg, "mode hs") then
+        BadAzsDB.DumpMode = "HS"
+        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r Prioridade: |cffffaa00HS FOCUS|r")
+    
+    -- Status
     else
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs Config]|r")
-        local status = BadAzsDB.UseItemRack and "|cff00ff00LIGADO|r" or "|cffff0000DESLIGADO|r"
-        DEFAULT_CHAT_FRAME:AddMessage("ItemRack Swap: " .. status)
-        DEFAULT_CHAT_FRAME:AddMessage("Use: /badazs itemrack on | off")
+        local rackStatus = BadAzsDB.UseItemRack and "|cff00ff00ON|r" or "|cffff0000OFF|r"
+        local modeStatus = (BadAzsDB.DumpMode == "SLAM") and "|cff00ccffSLAM|r" or "|cffffaa00HS|r"
+        
+        DEFAULT_CHAT_FRAME:AddMessage("ItemRack: " .. rackStatus)
+        DEFAULT_CHAT_FRAME:AddMessage("Dump Mode: " .. modeStatus)
+        DEFAULT_CHAT_FRAME:AddMessage("Comandos: /badazs mode [slam | hs]")
     end
 end
 
