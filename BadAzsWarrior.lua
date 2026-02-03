@@ -1,29 +1,23 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris
--- Version: 12.2
+-- Version: 12.3 (Charge Logic Fix)
 -- Target:  Turtle WoW (1.12.1)
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v12.2 - Stable]|r"
-local LastSlamTime = 0 -- Variável de controle do Slam
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v12.3 - Charge Fix]|r"
+local LastSlamTime = 0 
 
 -- ============================================================
 -- [ CONFIGURAÇÃO ESTÁTICA ]
 -- ============================================================
-local BadAzsSets = {
-    TwoHand   = "TH", 
-    DualWield = "DW", 
-    Shield    = "WS"  
-}
+local BadAzsSets = { TwoHand = "TH", DualWield = "DW", Shield = "WS" }
 
 -- ============================================================
--- [1. INICIALIZAÇÃO & UTILITÁRIOS]
+-- [1. INICIALIZAÇÃO ]
 -- ============================================================
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:SetScript("OnEvent", function()
     if not BadAzsDB then BadAzsDB = { UseItemRack = false } end
-    
-    -- Chat Filter (O Segredo da Fluidez: Esconde o Spam de erro)
     local block = {
         "fail", "not ready", "enough rage", "Another action", "range", 
         "No target", "recovered", "Ability", "Must be in", "nothing to attack", 
@@ -54,10 +48,7 @@ local function GetSpellID(spellName)
     for i = 1, 200 do
         local n = GetSpellName(i, "spell")
         if not n then break end
-        if n == spellName then 
-            SpellCache[spellName] = i
-            return i 
-        end
+        if n == spellName then SpellCache[spellName] = i return i end
     end
     return nil
 end
@@ -118,11 +109,10 @@ end
 -- [2. MÓDULOS DE COMBATE]
 -- ============================================================
 
--- [[ TANK: Turtle Wall ]]
+-- [[ TANK ]]
 function BadAzsTank()
     if not attacking then AttackTarget() end 
     UIErrorsFrame:Clear()
-    
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
     
@@ -134,14 +124,12 @@ function BadAzsTank()
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzs_Cast("Taunt") 
     end
-
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
     BadAzs_Cast("Revenge"); BadAzs_Cast("Sunder Armor") 
-    
     if rage > 50 then BadAzs_Cast("Heroic Strike") end
 end
 
--- [[ ARMS: Turtle Meta ]]
+-- [[ ARMS (FIXED CHARGE) ]]
 function BadAzsArms() 
     if not attacking then AttackTarget() end 
     UIErrorsFrame:Clear()
@@ -151,13 +139,19 @@ function BadAzsArms()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
 
-    -- Gap Closer: Charge (Fora de combate)
-    if not inCombat and not CheckInteractDistance("target", 3) then
-        if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzs_Cast("Charge") end
-        return
+    -- [[ GAP CLOSER (CHARGE) FIX ]]
+    -- Só tenta se: Fora de Combate + Longe + Charge Pronto
+    if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
+        if stance ~= 1 then 
+            BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH")
+            return -- Return necessário para troca de postura
+        else 
+            BadAzs_Cast("Charge") 
+            -- SEM RETURN AQUI: Se falhar (distância), continua o script.
+        end
     end
 
-    -- Gap Closer: Intercept (Com CTRL)
+    -- Intercept (Safety CTRL)
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
         if stance ~= 3 then BadAzs_Cast("Berserker Stance") else BadAzs_Cast("Intercept") end
         return
@@ -169,11 +163,9 @@ function BadAzsArms()
         return
     end
 
-    -- Stance Check
     if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
     if BadAzsDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("TH") end
 
-    -- Bloodrage de Socorro
     if rage < 30 and inCombat then BadAzs_Cast("Bloodrage") end
 
     BadAzs_Cast("Overpower") 
@@ -187,18 +179,16 @@ function BadAzsArms()
     for i=1,16 do local t = UnitDebuff("target", i); if t and string.find(t, "Ability_Gouge") then hasRend=true break end end
     if not hasRend and thp > 20 then BadAzs_Cast("Rend") end
 
-    -- [[ CORREÇÃO DO SLAM DUPLO (ANTI-CLIP 3.0s) ]]
+    -- Slam Anti-Clip (3.0s)
     local timeNow = GetTime()
     if (timeNow - LastSlamTime) > 3.0 then
         if SP_ST_Data and SP_ST_Data.main_start then
             local swing = timeNow - SP_ST_Data.main_start
             if rage > 15 and swing < 1.0 then 
-                BadAzs_Cast("Slam")
-                LastSlamTime = timeNow 
+                BadAzs_Cast("Slam"); LastSlamTime = timeNow 
             end
         elseif rage > 25 then 
-            BadAzs_Cast("Slam") 
-            LastSlamTime = timeNow 
+            BadAzs_Cast("Slam"); LastSlamTime = timeNow 
         end
     end
 
@@ -206,7 +196,7 @@ function BadAzsArms()
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
--- [[ FURY: Adaptive ]]
+-- [[ FURY (FIXED CHARGE) ]]
 function BadAzsFury() 
     if not attacking then AttackTarget() end 
     UIErrorsFrame:Clear() 
@@ -215,6 +205,16 @@ function BadAzsFury()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
     
+    -- Gap Closer Fix
+    if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
+        if stance ~= 1 then 
+            BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH")
+            return
+        else 
+            BadAzs_Cast("Charge") 
+        end
+    end
+
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
         if stance ~= 3 then BadAzs_Cast("Berserker Stance") else BadAzs_Cast("Intercept") end
         return
@@ -242,12 +242,11 @@ function BadAzsFury()
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
--- [[ UTILIDADE: ALT KEY (Substitui Crowd) ]]
+-- [[ UTILIDADE ]]
 function BadAzsCrowd()
     if not attacking then AttackTarget() end 
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
-    
     if stance == 1 then 
         BadAzs_Cast("Sweeping Strikes"); BadAzs_Cast("Thunder Clap")
         BadAzs_Cast("Berserker Stance"); BadAzs_Equip("TH") 
@@ -261,7 +260,7 @@ function BadAzsCrowd()
 end
 
 -- ============================================================
--- [3. SLASH COMMANDS E CONFIG]
+-- [3. SLASH COMMANDS]
 -- ============================================================
 function BadAzs_ArmsWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsArms() end end
 function BadAzs_FuryWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsFury() end end
