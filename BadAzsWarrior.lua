@@ -1,9 +1,9 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris
--- Version: 13.0 (Dual Mode: Slam vs HS)
--- Target:  Turtle WoW (1.12.1)
+-- Version: 14.0 (Uses Core Attack API)
+-- Target:  Turtle WoW (1.12 / LUA 5.0)
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v13.0 - Dual Mode]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v13.1]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
@@ -17,7 +17,6 @@ local BadAzsSets = { TwoHand = "TH", DualWield = "DW", Shield = "WS" }
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:SetScript("OnEvent", function()
-    -- Configuração Padrão: ItemRack OFF, Modo SLAM
     if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
     if not BadAzsDB.DumpMode then BadAzsDB.DumpMode = "SLAM" end
     
@@ -79,13 +78,12 @@ local function BadAzs_Equip(mode)
     end
 end
 
-local attacking = false
-local f = CreateFrame'Frame'
-f:RegisterEvent'PLAYER_ENTER_COMBAT'; f:RegisterEvent'PLAYER_LEAVE_COMBAT'
-f:SetScript('OnEvent', function() attacking = (event == 'PLAYER_ENTER_COMBAT') end)
-
+-- WRAPPER DE CAST SEGURO VIA CORE
 function BadAzs_Cast(t) 
-    if t == "Attack" and attacking then return end 
+    if t == "Attack" then 
+        BadAzs_StartAttack() -- Chama a API Global do Core
+        return 
+    end 
     _Cast(t) 
 end
 
@@ -115,7 +113,7 @@ end
 
 -- [[ TANK ]]
 function BadAzsTank()
-    if not attacking then AttackTarget() end 
+    BadAzs_StartAttack() -- Inicia ataque seguro via Core
     UIErrorsFrame:Clear()
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
@@ -131,13 +129,12 @@ function BadAzsTank()
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
     BadAzs_Cast("Revenge"); BadAzs_Cast("Sunder Armor") 
     
-    -- Tank prefere HS por padrão, mas respeita a config se quiser
     if rage > 40 then BadAzs_Cast("Heroic Strike") end
 end
 
 -- [[ ARMS (DUAL MODE) ]]
 function BadAzsArms() 
-    if not attacking then AttackTarget() end 
+    BadAzs_StartAttack() -- Inicia ataque seguro via Core
     UIErrorsFrame:Clear()
     
     local stance = BadAzs_GetStance()
@@ -159,7 +156,7 @@ function BadAzsArms()
     -- FASE EXECUTE (PRIORIDADE ABSOLUTA)
     if thp <= 20 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzs_Cast("Execute") end
-        return -- Retorna para garantir que NENHUMA raiva seja gasta em Slam/HS
+        return 
     end
 
     if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
@@ -179,16 +176,15 @@ function BadAzsArms()
     if not hasRend and thp > 20 then BadAzs_Cast("Rend") end
 
     -- [[ LÓGICA DE DUMP: DUAL MODE ]]
-    -- Define os limites (Thresholds) baseado no modo escolhido
-    local slam_thresh = 15 -- Custo base
-    local hs_thresh = 60   -- Custo de "desperdício"
+    local slam_thresh = 15 
+    local hs_thresh = 60    
     
     if BadAzsDB.DumpMode == "HS" then
-        slam_thresh = 50 -- Só usa Slam se tiver MUITA raiva
-        hs_thresh = 35   -- Usa HS agressivamente
+        slam_thresh = 50 
+        hs_thresh = 35   
     end
 
-    -- 1. Tenta Slam (Respeitando o modo)
+    -- 1. Tenta Slam
     local timeNow = GetTime()
     if (timeNow - LastSlamTime) > 3.0 then
         if SP_ST_Data and SP_ST_Data.main_start then
@@ -201,7 +197,7 @@ function BadAzsArms()
         end
     end
 
-    -- 2. Tenta HS (Respeitando o modo)
+    -- 2. Tenta HS
     if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
     
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
@@ -209,7 +205,7 @@ end
 
 -- [[ FURY (DUAL MODE) ]]
 function BadAzsFury() 
-    if not attacking then AttackTarget() end 
+    BadAzs_StartAttack() -- Inicia ataque seguro via Core
     UIErrorsFrame:Clear() 
     
     local stance = BadAzs_GetStance()
@@ -236,7 +232,7 @@ function BadAzsFury()
     BadAzs_Cast("Victory Rush"); BadAzs_Cast("Blood Fury"); BadAzs_Cast("Berserking")
 
     local thp = UnitHealth("target")/UnitHealthMax("target")*100
-    if thp <= 20 then BadAzs_Cast("Execute"); return end -- Prioridade Absoluta
+    if thp <= 20 then BadAzs_Cast("Execute"); return end 
     
     if BadAzs_Ready("Bloodthirst") then BadAzs_Cast("Bloodthirst") 
     elseif BadAzs_Ready("Mortal Strike") then BadAzs_Cast("Mortal Strike") end
@@ -244,7 +240,6 @@ function BadAzsFury()
     if BadAzs_Ready("Whirlwind") then BadAzs_Cast("Whirlwind") end
     if BadAzs_Ready("Master Strike") then BadAzs_Cast("Master Strike") end
     
-    -- Fury geralmente prefere HS, mas respeita a configuração
     local hs_thresh = 60
     if BadAzsDB.DumpMode == "HS" then hs_thresh = 40 end
 
@@ -254,7 +249,7 @@ end
 
 -- [[ UTILIDADE ]]
 function BadAzsCrowd()
-    if not attacking then AttackTarget() end 
+    BadAzs_StartAttack()
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
     if stance == 1 then 
