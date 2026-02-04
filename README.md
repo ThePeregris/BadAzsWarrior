@@ -2,12 +2,9 @@
 
 **Battle Analysis Driven Assistant Zmart System**
 *Turtle WoW Edition – Core Attack API*
-
 <a href="https://www.paypal.com/donate/?hosted_button_id=VLAFP6ZT8ATGU">
   <img src="https://github.com/ThePeregris/MainAssets/blob/main/Donate_PayPal.png" alt="Tips Appreciated!" align="right" width="120" height="75">
 </a>
-
----
 
 ## 1. TECHNICAL MANIFESTO | BadAzsWarrior
 
