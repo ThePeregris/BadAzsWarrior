@@ -3,7 +3,7 @@
 -- Version: 14.0 (Uses Core Attack API)
 -- Target:  Turtle WoW (1.12 / LUA 5.0)
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v13.1]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v14.0]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
@@ -304,4 +304,5 @@ end
 
 SLASH_BFURY1 = "/bfury"; SlashCmdList["BFURY"] = BadAzs_FuryWrapper
 SLASH_BARMS1 = "/barms"; SlashCmdList["BARMS"] = BadAzs_ArmsWrapper
+
 SLASH_BTANK1 = "/btank"; SlashCmdList["BTANK"] = BadAzsTank
