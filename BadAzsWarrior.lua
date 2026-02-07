@@ -1,9 +1,9 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris
--- Version: 14.1 (Global Core Integration)
+-- Version: 15 (BETA)
 -- Target:  Turtle WoW (1.12 / LUA 5.0)
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v14.1]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v15 BETA]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
