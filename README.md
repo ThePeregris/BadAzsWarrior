@@ -1,4 +1,4 @@
-# [B]adAzs Warrior – MODULAR TACTICAL SUITE (v14.0)
+# [B]adAzs Warrior – MODULAR TACTICAL SUITE (v15 Beta)
 
 **Battle Analysis Driven Assistant Zmart System**
 *Turtle WoW Edition – Core Attack API*
@@ -8,7 +8,7 @@
 
 ## 1. TECHNICAL MANIFESTO | BadAzsWarrior
 
-**Version:** v14.0
+**Version:** v15 Beta
 **Target:** Turtle WoW (Client 1.12.x – LUA 5.0)
 **Architecture:** Modular Combat Engine + Core Attack API
 **Author:** **ThePeregris**
@@ -250,8 +250,5 @@ Resultado:
 
 O **BadAzsWarrior** reage ao jogo real, respeita o jogador e nunca tenta “jogar sozinho”.
 ---
-**BadAzsWarrior v14.0**
+**BadAzsWarrior v15_Beta**
 *Precisão não é uma opção. É um requisito.*
-
-
-Só dizer.
