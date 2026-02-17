@@ -52,6 +52,7 @@ end
 -- ============================================================
 
 -- [[ TANK PRO (Com Bloodrage e Rage Safety) ]]
+
 function BadAzsTank()
     BadAzs_Cast("Attack")
     UIErrorsFrame:Clear()
@@ -62,6 +63,17 @@ function BadAzsTank()
     local timeNow = GetTime()
     local inCombat = UnitAffectingCombat("player")
 
+    -- Gap Closer (Charge de Abertura)
+    if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
+        if stance ~= 1 then 
+            BadAzs_Cast("Battle Stance")
+            return -- Para aqui para mudar a postura
+        else 
+            BadAzs_Cast("Charge")
+            return -- Para aqui para executar o Charge
+        end
+    end
+    
     -- [1] STANCE DANCE: OVERPOWER (SAFE MODE)
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); return end 
@@ -73,8 +85,7 @@ function BadAzsTank()
     if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
     -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
-    -- Usa sempre que estiver pronto e em combate para alimentar o Shield Slam
-    if inCombat and BadAzs_Ready("Bloodrage") then 
+        if inCombat and BadAzs_Ready("Bloodrage") then 
         BadAzs_Cast("Bloodrage") 
     end
     
@@ -285,5 +296,6 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
