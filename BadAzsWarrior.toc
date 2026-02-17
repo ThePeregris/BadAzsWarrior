@@ -2,10 +2,9 @@
 ## Title: [|cff355E3BB|r]adAzs |cff32CD32Warrior|r
 ## Notes: BadAzs - Warrior Module
 ## Author: ThePeregris & Gemini
-## Version: 17.2
+## Version: 17.4
 ## SavedVariables: BadAzsDB
 ## Dependencies: BadAzsCore
-## OptionalDeps: ItemRack, SP_SwingTimer
+## OptionalDeps: ItemRack
 
 BadAzsWarrior.lua
-
