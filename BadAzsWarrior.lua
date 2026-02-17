@@ -51,10 +51,8 @@ end
 -- [2. MÓDULOS DE COMBATE ]
 -- ============================================================
 
--- [[ TANK PRO (Com Bloodrage e Rage Safety) ]]
-
+-- [[ TANK PRO (Charge & Combat) ]]
 function BadAzsTank()
-    BadAzs_Cast("Attack")
     UIErrorsFrame:Clear()
     
     local stance = BadAzs_GetStance()
@@ -63,66 +61,58 @@ function BadAzsTank()
     local timeNow = GetTime()
     local inCombat = UnitAffectingCombat("player")
 
-    -- Gap Closer (Charge de Abertura)
-    if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
-        if stance ~= 1 then 
-            BadAzs_Cast("Battle Stance")
-            return -- Para aqui para mudar a postura
-        else 
-            BadAzs_Cast("Charge")
-            return -- Para aqui para executar o Charge
+    -- [1] GAP CLOSER (Charge de Abertura)
+    if not inCombat and UnitExists("target") and not CheckInteractDistance("target", 3) then
+        if BadAzs_Ready("Charge") then
+            if stance ~= 1 then 
+                BadAzs_Cast("Battle Stance")
+                return 
+            else 
+                BadAzs_Cast("Charge")
+                return 
+            end
         end
     end
+
+    BadAzs_Cast("Attack")
     
-    -- [1] STANCE DANCE: OVERPOWER (SAFE MODE)
+    -- [3] STANCE DANCE: OVERPOWER (SAFE MODE)
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); return end 
         if stance == 1 then BadAzs_Cast("Overpower"); return end     
     end
 
-    -- [2] SEGURANÇA E EQUIPAMENTO
+    -- [4] SEGURANÇA E EQUIPAMENTO
     if stance ~= 2 then BadAzs_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
-    -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
-        if inCombat and BadAzs_Ready("Bloodrage") then 
+    -- [5] GERAÇÃO DE RAIVA (BLOODRAGE)
+    if inCombat and BadAzs_Ready("Bloodrage") then 
         BadAzs_Cast("Bloodrage") 
     end
     
-    -- [4] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
-        -- Taunt (Emergência)
+    -- [6] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzs_Cast("Taunt") 
     end
 
-    -- SHIELD SLAM (PRIORIDADE MÁXIMA - Turtle WoW)
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
-
-    -- REVENGE (Eficiência Extrema)
     BadAzs_Cast("Revenge")
-
-    -- VICTORY RUSH (Dano Grátis)
     if BadAzs_Ready("Victory Rush") then BadAzs_Cast("Victory Rush") end
 
-    -- SHIELD BLOCK (Smart Block)
     if not BadAzs_HasBuff("Ability_Defend") and rage >= 10 then 
         BadAzs_Cast("Shield Block") 
     end
 
-    -- DEMORALIZING SHOUT (Debuff)
     if not BadAzs_TargetHasDebuff("Ability_Warrior_WarCry") and rage >= 10 then
         BadAzs_Cast("Demoralizing Shout")
     end
     
-    -- BATTLE SHOUT (Auto-Buff)
     if not BadAzs_HasBuff("BattleShout") and rage >= 10 then
         BadAzs_Cast("Battle Shout")
     end
     
-    -- SUNDER ARMOR (Filler)
     if rage >= 15 then BadAzs_Cast("Sunder Armor") end
-    
-    -- HEROIC STRIKE (Rage Dump)
     if rage > 55 then BadAzs_Cast("Heroic Strike") end
 end
 
@@ -296,6 +286,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
