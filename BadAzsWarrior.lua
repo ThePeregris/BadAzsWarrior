@@ -21,9 +21,9 @@ loadFrame:RegisterEvent("ACTIONBAR_SLOT_CHANGED") -- Agora o Warrior monitora su
 loadFrame:SetScript("OnEvent", function()
     
     if event == "PLAYER_ENTERING_WORLD" then
-        if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
+        if not BadAzsWarDB then BadAzsWarDB = { UseItemRack = false, DumpMode = "SLAM" } end
         DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " Loaded.")
-        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[Mode]|r: " .. (BadAzsDB.DumpMode or "SLAM") .. " Focus")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[Mode]|r: " .. (BadAzsWarDB.DumpMode or "SLAM") .. " Focus")
     end
 
     -- Scanner de Barras (Trazido do Core para cá)
@@ -34,13 +34,11 @@ loadFrame:SetScript("OnEvent", function()
             if HasAction(i) then
                 local texture = GetActionTexture(i)
                 if texture then
-                    -- Procura apenas magias de Warrior que precisam de "Next Melee" check
-                    -- Texture de Cleave e Heroic Strike (dependendo do client, HS pode ter texture de Ambush ou Attack)
+
                     if string.find(texture, "Ability_Warrior_Cleave") or 
                        string.find(texture, "Ability_Rogue_Ambush") or 
                        string.find(texture, "Ability_MeleeDamage") then
                         
-                        -- Usa o scanner global do Core (que é apenas uma ferramenta)
                         BadAzs_TooltipScanner:SetAction(i)
                         local name = BadAzs_TooltipScannerTextLeft1:GetText()
                         
@@ -54,18 +52,15 @@ loadFrame:SetScript("OnEvent", function()
     end
 end)
 
--- Função Local de Cast Seguro para Warrior
 local function BadAzsW_Cast(spellName)
-    -- Verifica cache local para evitar toggle off
     local slot = WarriorSlotCache[spellName]
     if slot and IsCurrentAction(slot) then return end
     
-    -- Chama o Core para executar o ataque no target
     BadAzs_Cast(spellName)
 end
 
 local function BadAzs_Equip(mode)
-    if not BadAzsDB.UseItemRack then return end
+    if not BadAzsWarDB.UseItemRack then return end
     local EquipFunc = nil
     if ItemRack and type(ItemRack.EquipSet) == "function" then EquipFunc = ItemRack.EquipSet
     elseif type(ItemRack_EquipSet) == "function" then EquipFunc = ItemRack_EquipSet end
@@ -109,7 +104,7 @@ function BadAzsTank()
 
     -- [2] SEGURANÇA E EQUIPAMENTO
     if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
-    if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
+    if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
     -- [3] ROTAÇÃO DE AMEAÇA
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
@@ -158,7 +153,7 @@ function BadAzsArms()
     end
 
     if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
-    if BadAzsDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("TH") end
+    if BadAzsWarDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("TH") end
 
     if rage < 30 and inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
     if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
@@ -174,7 +169,7 @@ function BadAzsArms()
     -- [[ DUMP: SLAM vs HS ]]
     local slam_thresh = 15 
     local hs_thresh = 60    
-    if BadAzsDB.DumpMode == "HS" then
+    if BadAzsWarDB.DumpMode == "HS" then
         slam_thresh = 50; hs_thresh = 35    
     end
 
@@ -215,7 +210,7 @@ function BadAzsFury()
 
     if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("DW"); return end
     
-    if BadAzsDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then
+    if BadAzsWarDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then
         BadAzs_Equip("DW")
     end
     
@@ -233,7 +228,7 @@ function BadAzsFury()
     if BadAzs_Ready("Whirlwind") then BadAzsW_Cast("Whirlwind") end
     
     local hs_thresh = 50
-    if BadAzsDB.DumpMode == "HS" then hs_thresh = 35 end
+    if BadAzsWarDB.DumpMode == "HS" then hs_thresh = 35 end
 
     if rage > hs_thresh then BadAzsW_Cast("Heroic Strike") end
     
@@ -264,21 +259,21 @@ SLASH_BACONFIG1 = "/baconfig"
 SlashCmdList["BACONFIG"] = function(msg)
     msg = string.lower(msg)
     if string.find(msg, "itemrack on") then
-        BadAzsDB.UseItemRack = true
+        BadAzsWarDB.UseItemRack = true
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r ItemRack: |cff00ff00LIGADO|r")
     elseif string.find(msg, "itemrack off") then
-        BadAzsDB.UseItemRack = false
+        BadAzsWarDB.UseItemRack = false
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r ItemRack: |cffff0000DESLIGADO|r")
     elseif string.find(msg, "mode slam") then
-        BadAzsDB.DumpMode = "SLAM"
+        BadAzsWarDB.DumpMode = "SLAM"
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r Prioridade: |cff00ccffSLAM FOCUS|r")
     elseif string.find(msg, "mode hs") then
-        BadAzsDB.DumpMode = "HS"
+        BadAzsWarDB.DumpMode = "HS"
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r Prioridade: |cffffaa00HS FOCUS|r")
     else
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs Warrior Config]|r")
-        local rackStatus = BadAzsDB.UseItemRack and "|cff00ff00ON|r" or "|cffff0000OFF|r"
-        local modeStatus = (BadAzsDB.DumpMode == "SLAM") and "|cff00ccffSLAM|r" or "|cffffaa00HS|r"
+        local rackStatus = BadAzsWarDB.UseItemRack and "|cff00ff00ON|r" or "|cffff0000OFF|r"
+        local modeStatus = (BadAzsWarDB.DumpMode == "SLAM") and "|cff00ccffSLAM|r" or "|cffffaa00HS|r"
         DEFAULT_CHAT_FRAME:AddMessage("ItemRack: " .. rackStatus)
         DEFAULT_CHAT_FRAME:AddMessage("Dump Mode: " .. modeStatus)
         DEFAULT_CHAT_FRAME:AddMessage("Comandos: /baconfig mode [slam | hs]")
@@ -288,3 +283,4 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
