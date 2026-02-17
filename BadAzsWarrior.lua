@@ -264,9 +264,15 @@ SlashCmdList["BACONFIG"] = function(msg)
         BadAzsDB.DumpMode = "HS"
         DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs]|r Prioridade: |cffffaa00HS FOCUS|r")
     else
-        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs Warrior Config]|r")
-        local rackStatus = BadAzsDB.UseItemRack and "|cff00ff00ON|r" or "|cffff0000OFF|r"
-        local modeStatus = (BadAzsDB.DumpMode == "SLAM") and "|cff00ccffSLAM|r" or "|cffffaa00HS|r"
+        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[BadAzs Config]|r")
+        local rackStatus = BadAzsDB.UseItemRack and "ON" or "OFF"
+        local modeStatus = (BadAzsDB.DumpMode == "SLAM") and "SLAM" or "HS"
         DEFAULT_CHAT_FRAME:AddMessage("ItemRack: " .. rackStatus)
         DEFAULT_CHAT_FRAME:AddMessage("Dump Mode: " .. modeStatus)
-        DEFAULT_CHAT_FRAME:AddMessage("Comandos: /baconfig mode [slam |
+        DEFAULT_CHAT_FRAME:AddMessage("Comandos: /baconfig mode slam ou hs")
+    end
+end
+
+SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
+SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
+SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
