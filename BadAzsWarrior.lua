@@ -79,8 +79,7 @@ function BadAzsTank()
     end
     
     -- [4] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
-    
-    -- Taunt (Emergência)
+        -- Taunt (Emergência)
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzs_Cast("Taunt") 
     end
@@ -103,12 +102,17 @@ function BadAzsTank()
     if not BadAzs_TargetHasDebuff("Ability_Warrior_WarCry") and rage >= 10 then
         BadAzs_Cast("Demoralizing Shout")
     end
-
+    
+    -- BATTLE SHOUT (Auto-Buff)
+    if not BadAzs_HasBuff("BattleShout") and rage >= 10 then
+        BadAzs_Cast("Battle Shout")
+    end
+    
     -- SUNDER ARMOR (Filler)
     if rage >= 15 then BadAzs_Cast("Sunder Armor") end
     
     -- HEROIC STRIKE (Rage Dump)
-    if rage > 60 then BadAzs_Cast("Heroic Strike") end
+    if rage > 55 then BadAzs_Cast("Heroic Strike") end
 end
 
 -- [[ ARMS (DUAL MODE) ]]
@@ -281,4 +285,5 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
