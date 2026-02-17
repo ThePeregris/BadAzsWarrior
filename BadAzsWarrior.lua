@@ -1,27 +1,68 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris & Gemini
--- Version: 17.2 (Rage Safe Mode)
+-- Version: 17.4 (Self-Sufficient Cache)
 -- Target:  Turtle WoW (1.12 / LUA 5.0)
--- Requires: BadAzs Core v2.1+
+-- Requires: BadAzs Core v2.3+
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.2]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.4]|r"
 local LastSlamTime = 0 
 
--- ============================================================
--- [ CONFIGURAÇÃO LOCAL ]
--- ============================================================
+-- Cache Local Exclusivo do Guerreiro
+local WarriorSlotCache = { 
+    ["Heroic Strike"] = nil, 
+    ["Cleave"] = nil 
+}
+
 local BadAzsSets = { TwoHand = "TH", DualWield = "DW", Shield = "WS" }
 
--- ============================================================
--- [1. INICIALIZAÇÃO ]
--- ============================================================
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+loadFrame:RegisterEvent("ACTIONBAR_SLOT_CHANGED") -- Agora o Warrior monitora suas barras
 loadFrame:SetScript("OnEvent", function()
-    if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
-    DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " Loaded.")
-    DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[Mode]|r: " .. (BadAzsDB.DumpMode or "SLAM") .. " Focus")
+    
+    if event == "PLAYER_ENTERING_WORLD" then
+        if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
+        DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " Loaded.")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff355E3B[Mode]|r: " .. (BadAzsDB.DumpMode or "SLAM") .. " Focus")
+    end
+
+    -- Scanner de Barras (Trazido do Core para cá)
+    if event == "PLAYER_ENTERING_WORLD" or event == "ACTIONBAR_SLOT_CHANGED" then
+        for k in pairs(WarriorSlotCache) do WarriorSlotCache[k] = nil end
+        
+        for i = 1, 120 do
+            if HasAction(i) then
+                local texture = GetActionTexture(i)
+                if texture then
+                    -- Procura apenas magias de Warrior que precisam de "Next Melee" check
+                    -- Texture de Cleave e Heroic Strike (dependendo do client, HS pode ter texture de Ambush ou Attack)
+                    if string.find(texture, "Ability_Warrior_Cleave") or 
+                       string.find(texture, "Ability_Rogue_Ambush") or 
+                       string.find(texture, "Ability_MeleeDamage") then
+                        
+                        -- Usa o scanner global do Core (que é apenas uma ferramenta)
+                        BadAzs_TooltipScanner:SetAction(i)
+                        local name = BadAzs_TooltipScannerTextLeft1:GetText()
+                        
+                        if name and WarriorSlotCache[name] ~= nil then 
+                            WarriorSlotCache[name] = i
+                        end
+                    end
+                end
+            end
+        end
+    end
 end)
+
+-- Função Local de Cast Seguro para Warrior
+local function BadAzsW_Cast(spellName)
+    -- Verifica cache local para evitar toggle off
+    local slot = WarriorSlotCache[spellName]
+    if slot and IsCurrentAction(slot) then return end
+    
+    -- Chama o Core para executar o ataque no target
+    BadAzs_Cast(spellName)
+end
 
 local function BadAzs_Equip(mode)
     if not BadAzsDB.UseItemRack then return end
@@ -47,13 +88,9 @@ function BadAzs_HasShield()
     return false
 end
 
--- ============================================================
--- [2. MÓDULOS DE COMBATE ]
--- ============================================================
-
--- [[ TANK PRO (Com Rage Safety) ]]
+-- [[ TANK PRO ]]
 function BadAzsTank()
-    BadAzs_Cast("Attack")
+    BadAzsW_Cast("Attack")
     UIErrorsFrame:Clear()
     
     local stance = BadAzs_GetStance()
@@ -61,54 +98,43 @@ function BadAzsTank()
     local lastDodge = getglobal("BadAzs_LastDodge") or 0
     local timeNow = GetTime()
 
-    -- [1] STANCE DANCE: OVERPOWER (SAFE MODE)
-    -- Trava: Só troca se Rage < 30. Se tiver muita raiva, não vale a pena perder.
+    -- [PRIORIDADE ZERO] HEROIC STRIKE (Rage Dump)
+    if rage > 60 then BadAzsW_Cast("Heroic Strike") end
+
+    -- [1] STANCE DANCE: OVERPOWER
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
-        if stance == 2 then BadAzs_Cast("Battle Stance"); return end -- Vai para Battle
-        if stance == 1 then BadAzs_Cast("Overpower"); return end     -- Usa Overpower
+        if stance == 2 then BadAzsW_Cast("Battle Stance"); return end 
+        if stance == 1 then BadAzsW_Cast("Overpower"); return end      
     end
 
     -- [2] SEGURANÇA E EQUIPAMENTO
-    -- Se não estamos fazendo a dança do Overpower, força Defensive Stance
-    if stance ~= 2 then BadAzs_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
+    if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
-    -- [3] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
-    
-    -- Taunt (Emergência)
+    -- [3] ROTAÇÃO DE AMEAÇA
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
-        BadAzs_Cast("Taunt") 
+        BadAzsW_Cast("Taunt") 
     end
 
-    -- SHIELD SLAM (PRIORIDADE MÁXIMA - Turtle WoW)
-    if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
+    if BadAzs_Ready("Shield Slam") then BadAzsW_Cast("Shield Slam") end
+    BadAzsW_Cast("Revenge")
 
-    -- REVENGE (Eficiência Extrema)
-    BadAzs_Cast("Revenge")
+    if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
 
-    -- VICTORY RUSH (Dano Grátis)
-    if BadAzs_Ready("Victory Rush") then BadAzs_Cast("Victory Rush") end
-
-    -- SHIELD BLOCK (Smart Block)
     if not BadAzs_HasBuff("Ability_Defend") and rage >= 10 then 
-        BadAzs_Cast("Shield Block") 
+        BadAzsW_Cast("Shield Block") 
     end
 
-    -- DEMORALIZING SHOUT (Debuff)
     if not BadAzs_TargetHasDebuff("Ability_Warrior_WarCry") and rage >= 10 then
-        BadAzs_Cast("Demoralizing Shout")
+        BadAzsW_Cast("Demoralizing Shout")
     end
 
-    -- SUNDER ARMOR (Filler)
-    if rage >= 15 then BadAzs_Cast("Sunder Armor") end
-    
-    -- HEROIC STRIKE (Rage Dump)
-    if rage > 60 then BadAzs_Cast("Heroic Strike") end
+    if rage >= 15 then BadAzsW_Cast("Sunder Armor") end
 end
 
 -- [[ ARMS (DUAL MODE) ]]
 function BadAzsArms() 
-    BadAzs_Cast("Attack")
+    BadAzsW_Cast("Attack")
     UIErrorsFrame:Clear()
     
     local stance = BadAzs_GetStance()
@@ -116,46 +142,40 @@ function BadAzsArms()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
 
-    -- Gap Closer (Charge)
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
-        if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return
-        else BadAzs_Cast("Charge") end
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        else BadAzsW_Cast("Charge") end
     end
 
-    -- Gap Closer (Intercept)
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
-        if stance ~= 3 then BadAzs_Cast("Berserker Stance") else BadAzs_Cast("Intercept") end
+        if stance ~= 3 then BadAzsW_Cast("Berserker Stance") else BadAzsW_Cast("Intercept") end
         return
     end
 
-    -- EXECUTE PHASE
     if thp > 0 and thp <= 20 then
-        if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzs_Cast("Execute") end
+        if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzsW_Cast("Execute") end
         return 
     end
 
-    -- Stance Check
-    if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
+    if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
     if BadAzsDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("TH") end
 
-    -- Buffs
-    if rage < 30 and inCombat and BadAzs_Ready("Bloodrage") then BadAzs_Cast("Bloodrage") end
-    if BadAzs_Ready("Victory Rush") then BadAzs_Cast("Victory Rush") end
+    if rage < 30 and inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
+    if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
 
-    -- Main Rotation
-    BadAzs_Cast("Overpower") 
+    BadAzsW_Cast("Overpower") 
     
-    if BadAzs_Ready("Mortal Strike") then BadAzs_Cast("Mortal Strike") 
-    elseif BadAzs_Ready("Bloodthirst") then BadAzs_Cast("Bloodthirst") end
+    if BadAzs_Ready("Mortal Strike") then BadAzsW_Cast("Mortal Strike") 
+    elseif BadAzs_Ready("Bloodthirst") then BadAzsW_Cast("Bloodthirst") end
     
     local hasRend = BadAzs_TargetHasDebuff("Ability_Gouge")
-    if not hasRend and thp > 20 then BadAzs_Cast("Rend") end
+    if not hasRend and thp > 20 then BadAzsW_Cast("Rend") end
 
     -- [[ DUMP: SLAM vs HS ]]
     local slam_thresh = 15 
     local hs_thresh = 60    
     if BadAzsDB.DumpMode == "HS" then
-        slam_thresh = 50; hs_thresh = 35   
+        slam_thresh = 50; hs_thresh = 35    
     end
 
     local timeNow = GetTime()
@@ -163,88 +183,80 @@ function BadAzsArms()
         if getglobal("SP_ST_Data") and SP_ST_Data.main_start then
             local swing = timeNow - SP_ST_Data.main_start
             if rage > slam_thresh and swing < 1.0 then 
-                BadAzs_Cast("Slam"); LastSlamTime = timeNow 
+                BadAzsW_Cast("Slam"); LastSlamTime = timeNow 
             end
         elseif rage > (slam_thresh + 10) then 
-            BadAzs_Cast("Slam"); LastSlamTime = timeNow 
+            BadAzsW_Cast("Slam"); LastSlamTime = timeNow 
         end
     end
 
-    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
-    if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
+    if rage > hs_thresh then BadAzsW_Cast("Heroic Strike") end
+    if not BadAzs_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
 
 -- [[ FURY ]]
 function BadAzsFury() 
-    BadAzs_Cast("Attack")
+    BadAzsW_Cast("Attack")
     UIErrorsFrame:Clear() 
     
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
     local inCombat = UnitAffectingCombat("player")
     
-    -- Gap Closer
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
-        if stance ~= 1 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH"); return
-        else BadAzs_Cast("Charge") end
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        else BadAzsW_Cast("Charge") end
     end
 
     if inCombat and IsControlKeyDown() and not CheckInteractDistance("target", 3) then
-        if stance ~= 3 then BadAzs_Cast("Berserker Stance") else BadAzs_Cast("Intercept") end
+        if stance ~= 3 then BadAzsW_Cast("Berserker Stance") else BadAzsW_Cast("Intercept") end
         return
     end
 
-    -- Stance Check
-    if stance ~= 3 then BadAzs_Cast("Berserker Stance"); BadAzs_Equip("DW"); return end
+    if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("DW"); return end
     
     if BadAzsDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then
         BadAzs_Equip("DW")
     end
     
-    -- Buffs
-    if inCombat and BadAzs_Ready("Bloodrage") then BadAzs_Cast("Bloodrage") end
-    if inCombat and BadAzs_Ready("Berserker Rage") then BadAzs_Cast("Berserker Rage") end
-    if BadAzs_Ready("Victory Rush") then BadAzs_Cast("Victory Rush") end
-    BadAzs_Cast("Blood Fury"); BadAzs_Cast("Berserking")
+    if inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
+    if inCombat and BadAzs_Ready("Berserker Rage") then BadAzsW_Cast("Berserker Rage") end
+    if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
+    BadAzsW_Cast("Blood Fury"); BadAzsW_Cast("Berserking")
 
-    -- Execute
     local thp = BadAzs_GetTargetHP()
-    if thp > 0 and thp <= 20 then BadAzs_Cast("Execute"); return end 
+    if thp > 0 and thp <= 20 then BadAzsW_Cast("Execute"); return end 
     
-    -- Rotation
-    if BadAzs_Ready("Bloodthirst") then BadAzs_Cast("Bloodthirst") 
-    elseif BadAzs_Ready("Mortal Strike") then BadAzs_Cast("Mortal Strike") end
+    if BadAzs_Ready("Bloodthirst") then BadAzsW_Cast("Bloodthirst") 
+    elseif BadAzs_Ready("Mortal Strike") then BadAzsW_Cast("Mortal Strike") end
     
-    if BadAzs_Ready("Whirlwind") then BadAzs_Cast("Whirlwind") end
+    if BadAzs_Ready("Whirlwind") then BadAzsW_Cast("Whirlwind") end
     
     local hs_thresh = 50
     if BadAzsDB.DumpMode == "HS" then hs_thresh = 35 end
 
-    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
+    if rage > hs_thresh then BadAzsW_Cast("Heroic Strike") end
     
-    if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
+    if not BadAzs_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
 
 -- [[ UTILIDADE ]]
 function BadAzsCrowd()
-    BadAzs_Cast("Attack")
+    BadAzsW_Cast("Attack")
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
     if stance == 1 then 
-        BadAzs_Cast("Sweeping Strikes"); BadAzs_Cast("Thunder Clap")
-        BadAzs_Cast("Berserker Stance"); BadAzs_Equip("TH") 
+        BadAzsW_Cast("Sweeping Strikes"); BadAzsW_Cast("Thunder Clap")
+        BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("TH") 
         return 
     end
     if stance == 3 then 
-        BadAzs_Cast("Whirlwind"); if rage >= 20 then BadAzs_Cast("Cleave") end
+        BadAzsW_Cast("Whirlwind"); if rage >= 20 then BadAzsW_Cast("Cleave") end
         return
     end
-    if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") end
+    if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH") end
 end
 
--- ============================================================
--- [3. SLASH COMMANDS ]
--- ============================================================
 function BadAzs_ArmsWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsArms() end end
 function BadAzs_FuryWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsFury() end end
 
