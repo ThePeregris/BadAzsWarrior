@@ -252,6 +252,18 @@ function BadAzsCrowd()
     if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") end
 end
 
+-- [[ UTILITY: Intervene (Intervir) ]]
+function BadAzsIntervene()
+    local stance = BadAzs_GetStance()    
+    -- Intervene EXIGE Defensive Stance no Turtle WoW
+    if stance ~= 2 then 
+        CastSpellByName("Defensive Stance")
+        return 
+    end
+    -- Usa a função de Utilidade do Core para não perder o alvo principal
+    BadAzs_Util("Intervene")
+end
+
 -- ============================================================
 -- [3. SLASH COMMANDS ]
 -- ============================================================
@@ -286,6 +298,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
