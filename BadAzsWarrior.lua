@@ -51,7 +51,7 @@ end
 -- [2. MÓDULOS DE COMBATE ]
 -- ============================================================
 
--- [[ TANK PRO (Com Rage Safety) ]]
+-- [[ TANK PRO (Com Bloodrage e Rage Safety) ]]
 function BadAzsTank()
     BadAzs_Cast("Attack")
     UIErrorsFrame:Clear()
@@ -60,20 +60,25 @@ function BadAzsTank()
     local rage = UnitMana("player")
     local lastDodge = getglobal("BadAzs_LastDodge") or 0
     local timeNow = GetTime()
+    local inCombat = UnitAffectingCombat("player")
 
     -- [1] STANCE DANCE: OVERPOWER (SAFE MODE)
-    -- Trava: Só troca se Rage < 30. Se tiver muita raiva, não vale a pena perder.
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
-        if stance == 2 then BadAzs_Cast("Battle Stance"); return end -- Vai para Battle
-        if stance == 1 then BadAzs_Cast("Overpower"); return end     -- Usa Overpower
+        if stance == 2 then BadAzs_Cast("Battle Stance"); return end 
+        if stance == 1 then BadAzs_Cast("Overpower"); return end     
     end
 
     -- [2] SEGURANÇA E EQUIPAMENTO
-    -- Se não estamos fazendo a dança do Overpower, força Defensive Stance
     if stance ~= 2 then BadAzs_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
-    -- [3] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
+    -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
+    -- Usa sempre que estiver pronto e em combate para alimentar o Shield Slam
+    if inCombat and BadAzs_Ready("Bloodrage") then 
+        BadAzs_Cast("Bloodrage") 
+    end
+    
+    -- [4] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
     
     -- Taunt (Emergência)
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
@@ -276,3 +281,4 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
