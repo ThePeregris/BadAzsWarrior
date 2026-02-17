@@ -1,10 +1,10 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris & Gemini
--- Version: 17.5 (Core v2.3 Integrated)
+-- Version: 17.3 (Stable Charge Revert)
 -- Target:  Turtle WoW (1.12 / LUA 5.0)
--- Requires: BadAzs Core v2.3+
+-- Requires: BadAzs Core v2.1+
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.5]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.3]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
@@ -19,7 +19,7 @@ local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 loadFrame:SetScript("OnEvent", function()
     if not BadAzsDB then BadAzsDB = { UseItemRack = false, DumpMode = "SLAM" } end
-    DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " Loaded. Ready for Battle.")
+    DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " Loaded.")
 end)
 
 local function BadAzs_Equip(mode)
@@ -50,10 +50,9 @@ end
 -- [2. MÓDULOS DE COMBATE ]
 -- ============================================================
 
--- [[ TANK PRO (Target Lock & Charge) ]]
+-- [[ TANK PRO (v17.3 - Fix Charge & Combat) ]]
 function BadAzsTank()
     UIErrorsFrame:Clear()
-    if not UnitExists("target") then return end -- Trava de segurança
     
     local stance = BadAzs_GetStance()
     local rage = UnitMana("player")
@@ -62,32 +61,31 @@ function BadAzsTank()
     local inCombat = UnitAffectingCombat("player")
 
     -- [1] GAP CLOSER (Charge de Abertura)
-    if not inCombat and not CheckInteractDistance("target", 3) then
+    if not inCombat and UnitExists("target") and not CheckInteractDistance("target", 3) then
         if BadAzs_Ready("Charge") then
             if stance ~= 1 then BadAzs_Cast("Battle Stance"); return 
             else BadAzs_Cast("Charge"); return end
         end
     end
 
+    -- [2] INICIAR ATAQUE
     BadAzs_Cast("Attack")
     
-    -- [2] STANCE DANCE: OVERPOWER (SAFE MODE)
+    -- [3] STANCE DANCE: OVERPOWER (SAFE MODE)
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); return end 
         if stance == 1 then BadAzs_Cast("Overpower"); return end     
     end
 
-    -- [3] SEGURANÇA E EQUIPAMENTO
+    -- [4] SEGURANÇA E EQUIPAMENTO
     if stance ~= 2 then BadAzs_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
     
-    -- [4] GERAÇÃO DE RAIVA (BLOODRAGE)
+    -- [5] GERAÇÃO DE RAIVA (BLOODRAGE)
     if inCombat and BadAzs_Ready("Bloodrage") then BadAzs_Cast("Bloodrage") end
     
-    -- [5] ROTAÇÃO DE AMEAÇA
-    if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
-        BadAzs_Cast("Taunt") 
-    end
+    -- [6] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
+    if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then BadAzs_Cast("Taunt") end
 
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
     BadAzs_Cast("Revenge")
@@ -101,7 +99,7 @@ function BadAzsTank()
     if rage > 55 then BadAzs_Cast("Heroic Strike") end
 end
 
--- [[ ARMS ]]
+-- [[ ARMS (DUAL MODE) ]]
 function BadAzsArms() 
     BadAzs_Cast("Attack")
     UIErrorsFrame:Clear()
@@ -137,17 +135,17 @@ function BadAzsArms()
     if not BadAzs_TargetHasDebuff("Ability_Gouge") and thp > 20 then BadAzs_Cast("Rend") end
 
     -- DUMP
-    local slam_t = (BadAzsDB.DumpMode == "HS") and 50 or 15
-    local hs_t = (BadAzsDB.DumpMode == "HS") and 35 or 60
+    local slam_thresh = (BadAzsDB.DumpMode == "HS") and 50 or 15
+    local hs_thresh = (BadAzsDB.DumpMode == "HS") and 35 or 60
     local timeNow = GetTime()
     if (timeNow - LastSlamTime) > 3.0 then
         if getglobal("SP_ST_Data") and SP_ST_Data.main_start then
             local swing = timeNow - SP_ST_Data.main_start
-            if rage > slam_t and swing < 1.0 then BadAzs_Cast("Slam"); LastSlamTime = timeNow end
-        elseif rage > (slam_t + 10) then BadAzs_Cast("Slam"); LastSlamTime = timeNow end
+            if rage > slam_thresh and swing < 1.0 then BadAzs_Cast("Slam"); LastSlamTime = timeNow end
+        elseif rage > (slam_thresh + 10) then BadAzs_Cast("Slam"); LastSlamTime = timeNow end
     end
 
-    if rage > hs_t then BadAzs_Cast("Heroic Strike") end
+    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
@@ -171,8 +169,8 @@ function BadAzsFury()
     elseif BadAzs_Ready("Mortal Strike") then BadAzs_Cast("Mortal Strike") end
     if BadAzs_Ready("Whirlwind") then BadAzs_Cast("Whirlwind") end
     
-    local hs_t = (BadAzsDB.DumpMode == "HS") and 35 or 50
-    if rage > hs_t then BadAzs_Cast("Heroic Strike") end
+    local hs_thresh = (BadAzsDB.DumpMode == "HS") and 35 or 50
+    if rage > hs_thresh then BadAzs_Cast("Heroic Strike") end
     if not BadAzs_HasBuff("BattleShout") then BadAzs_Cast("Battle Shout") end
 end
 
@@ -189,13 +187,6 @@ function BadAzsCrowd()
         BadAzs_Cast("Whirlwind"); if rage >= 20 then BadAzs_Cast("Cleave") end; return
     end
     if stance == 2 then BadAzs_Cast("Battle Stance"); BadAzs_Equip("TH") end
-end
-
--- [[ UTILITY: Intervene (Usa a Via Rápida do Core) ]]
-function BadAzsIntervene()
-    local stance = BadAzs_GetStance()    
-    if stance ~= 2 then BadAzs_Cast("Defensive Stance"); return end
-    BadAzs_Util("Intervene")
 end
 
 -- ============================================================
