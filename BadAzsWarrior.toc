@@ -3,8 +3,9 @@
 ## Notes: BadAzs - Warrior Module
 ## Author: ThePeregris & Gemini
 ## Version: 17.4
-## SavedVariables: BadAzsDB
+## SavedVariables: BadAzsWarDB
 ## Dependencies: BadAzsCore
 ## OptionalDeps: ItemRack
 
 BadAzsWarrior.lua
+
