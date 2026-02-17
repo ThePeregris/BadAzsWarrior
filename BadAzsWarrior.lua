@@ -1,10 +1,10 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris & Gemini
--- Version: 17.1 (Ultimate Tank Rotation)
+-- Version: 17.2 (Rage Safe Mode)
 -- Target:  Turtle WoW (1.12 / LUA 5.0)
 -- Requires: BadAzs Core v2.1+
 
-local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.1]|r"
+local BadAzsVersion = "|cff355E3B[BadAzsWarrior v17.2]|r"
 local LastSlamTime = 0 
 
 -- ============================================================
@@ -51,7 +51,7 @@ end
 -- [2. MÓDULOS DE COMBATE ]
 -- ============================================================
 
--- [[ TANK PRO (Com Stance Dance) ]]
+-- [[ TANK PRO (Com Rage Safety) ]]
 function BadAzsTank()
     BadAzs_Cast("Attack")
     UIErrorsFrame:Clear()
@@ -61,9 +61,9 @@ function BadAzsTank()
     local lastDodge = getglobal("BadAzs_LastDodge") or 0
     local timeNow = GetTime()
 
-    -- [1] STANCE DANCE: OVERPOWER
-    -- Se houve esquiva nos ultimos 4s e temos Rage para trocar e bater
-    if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 then
+    -- [1] STANCE DANCE: OVERPOWER (SAFE MODE)
+    -- Trava: Só troca se Rage < 30. Se tiver muita raiva, não vale a pena perder.
+    if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
         if stance == 2 then BadAzs_Cast("Battle Stance"); return end -- Vai para Battle
         if stance == 1 then BadAzs_Cast("Overpower"); return end     -- Usa Overpower
     end
@@ -75,40 +75,34 @@ function BadAzsTank()
     
     -- [3] ROTAÇÃO DE AMEAÇA E SOBREVIVÊNCIA
     
-    -- Taunt (Emergência: Se o alvo não foca em mim)
+    -- Taunt (Emergência)
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzs_Cast("Taunt") 
     end
 
     -- SHIELD SLAM (PRIORIDADE MÁXIMA - Turtle WoW)
-    -- Gera Aggro Massivo + Buff de Bloqueio 70%
     if BadAzs_Ready("Shield Slam") then BadAzs_Cast("Shield Slam") end
 
     -- REVENGE (Eficiência Extrema)
-    -- Baixo custo, alto aggro. Proc on block/dodge/parry.
     BadAzs_Cast("Revenge")
 
     -- VICTORY RUSH (Dano Grátis)
     if BadAzs_Ready("Victory Rush") then BadAzs_Cast("Victory Rush") end
 
-    -- SHIELD BLOCK (Gestão de Raiva)
-    -- Só usa se NÃO tiver o buff "Ability_Defend" (Evita gastar raiva se já estiver bloqueando)
+    -- SHIELD BLOCK (Smart Block)
     if not BadAzs_HasBuff("Ability_Defend") and rage >= 10 then 
         BadAzs_Cast("Shield Block") 
     end
 
     -- DEMORALIZING SHOUT (Debuff)
-    -- Mantém o debuff no Boss para reduzir dano recebido
     if not BadAzs_TargetHasDebuff("Ability_Warrior_WarCry") and rage >= 10 then
         BadAzs_Cast("Demoralizing Shout")
     end
 
     -- SUNDER ARMOR (Filler)
-    -- Se Shield Slam e Revenge não estão disponíveis
     if rage >= 15 then BadAzs_Cast("Sunder Armor") end
     
     -- HEROIC STRIKE (Rage Dump)
-    -- Apenas se a rage estiver perigosamente alta (>60) para não faltar para Shield Slam
     if rage > 60 then BadAzs_Cast("Heroic Strike") end
 end
 
@@ -275,10 +269,4 @@ SlashCmdList["BACONFIG"] = function(msg)
         local modeStatus = (BadAzsDB.DumpMode == "SLAM") and "|cff00ccffSLAM|r" or "|cffffaa00HS|r"
         DEFAULT_CHAT_FRAME:AddMessage("ItemRack: " .. rackStatus)
         DEFAULT_CHAT_FRAME:AddMessage("Dump Mode: " .. modeStatus)
-        DEFAULT_CHAT_FRAME:AddMessage("Comandos: /baconfig mode [slam | hs]")
-    end
-end
-
-SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
-SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
-SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+        DEFAULT_CHAT_FRAME:AddMessage("Comandos: /baconfig mode [slam |
