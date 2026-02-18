@@ -103,17 +103,16 @@ function BadAzsTank()
         if stance == 2 then BadAzsW_Cast("Battle Stance"); return end 
         if stance == 1 then BadAzsW_Cast("Overpower"); return end      
     end
+    -- [2] GERAÇÃO DE RAIVA (BLOODRAGE) e Threat UP/Rage DUMP
+    if inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
 
-    -- [2] SEGURANÇA E EQUIPAMENTO
+    if rage > 55 then BadAzsW_Cast("Heroic Strike") end
+
+    -- [3] SEGURANÇA E EQUIPAMENTO
     if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
 
-    -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
-    if inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
-    
     -- [4] ROTAÇÃO DE AMEAÇA
-    if rage > 55 then BadAzsW_Cast("Heroic Strike") end
-
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzsW_Cast("Taunt") 
     end
@@ -298,6 +297,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
