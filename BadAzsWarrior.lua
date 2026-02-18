@@ -109,12 +109,10 @@ function BadAzsTank()
     if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
 
     -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
-        if inCombat and BadAzs_Ready("Bloodrage") then 
-        BadAzs_Cast("Bloodrage") 
-    end
-
+    if inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
+    
     -- [4] ROTAÇÃO DE AMEAÇA
-    if rage > 60 then BadAzsW_Cast("Heroic Strike") end
+    if rage > 55 then BadAzsW_Cast("Heroic Strike") end
 
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzsW_Cast("Taunt") 
@@ -199,6 +197,7 @@ function BadAzsArms()
     end
 
     if rage > hs_thresh then BadAzsW_Cast("Heroic Strike") end
+    
     if not BadAzs_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
 
@@ -228,8 +227,11 @@ function BadAzsFury()
     end
     
     if inCombat and BadAzs_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
+    
     if inCombat and BadAzs_Ready("Berserker Rage") then BadAzsW_Cast("Berserker Rage") end
+    
     if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
+    
     BadAzsW_Cast("Blood Fury"); BadAzsW_Cast("Berserking")
 
     local thp = BadAzs_GetTargetHP()
@@ -296,5 +298,6 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
