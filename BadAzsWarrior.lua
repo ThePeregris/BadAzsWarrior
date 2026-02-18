@@ -119,7 +119,9 @@ function BadAzsTank()
 
     if BadAzs_Ready("Shield Slam") then BadAzsW_Cast("Shield Slam") end
     BadAzsW_Cast("Revenge")
-
+    
+    if BadAzs_Ready("Concussion Blow") then BadAzsW_Cast("Concussion Blow") end
+ 
     if BadAzs_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
 
     if not BadAzs_HasBuff("Ability_Defend") and rage >= 10 then 
@@ -297,6 +299,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
