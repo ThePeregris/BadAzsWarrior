@@ -93,9 +93,11 @@ function BadAzsTank()
     local lastDodge = getglobal("BadAzs_LastDodge") or 0
     local timeNow = GetTime()
 
-    -- [PRIORIDADE ZERO] HEROIC STRIKE (Rage Dump)
-    if rage > 60 then BadAzsW_Cast("Heroic Strike") end
-
+    if not inCombat and not CheckInteractDistance("target", 3) and BadAzs_Ready("Charge") then
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("WS"); return
+        else BadAzsW_Cast("Charge") end
+    end
+    
     -- [1] STANCE DANCE: OVERPOWER
     if (timeNow - lastDodge) < 4 and BadAzs_Ready("Overpower") and rage >= 5 and rage < 30 then
         if stance == 2 then BadAzsW_Cast("Battle Stance"); return end 
@@ -105,8 +107,15 @@ function BadAzsTank()
     -- [2] SEGURANÇA E EQUIPAMENTO
     if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
     if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
-    
-    -- [3] ROTAÇÃO DE AMEAÇA
+
+    -- [3] GERAÇÃO DE RAIVA (BLOODRAGE)
+        if inCombat and BadAzs_Ready("Bloodrage") then 
+        BadAzs_Cast("Bloodrage") 
+    end
+
+    -- [4] ROTAÇÃO DE AMEAÇA
+    if rage > 60 then BadAzsW_Cast("Heroic Strike") end
+
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then 
         BadAzsW_Cast("Taunt") 
     end
@@ -122,6 +131,10 @@ function BadAzsTank()
 
     if not BadAzs_TargetHasDebuff("Ability_Warrior_WarCry") and rage >= 10 then
         BadAzsW_Cast("Demoralizing Shout")
+    end
+   
+    if not BadAzs_HasBuff("BattleShout") and rage >= 10 then
+        BadAzs_Cast("Battle Shout")
     end
 
     if rage >= 15 then BadAzsW_Cast("Sunder Armor") end
@@ -283,4 +296,5 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
