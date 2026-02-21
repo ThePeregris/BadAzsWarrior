@@ -1,11 +1,10 @@
 ## Interface: 11200
 ## Title: [|cff355E3BB|r]adAzs |cff32CD32Warrior|r
 ## Notes: BadAzs - Warrior Module
-## Author: ThePeregris & Gemini
+## Author: ThePeregris
 ## Version: 17.4
 ## SavedVariables: BadAzsWarDB
 ## Dependencies: BadAzsCore
 ## OptionalDeps: ItemRack
 
 BadAzsWarrior.lua
-
