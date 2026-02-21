@@ -6,249 +6,253 @@
   <img src="https://github.com/ThePeregris/MainAssets/blob/main/Donate_PayPal.png" alt="Tips Appreciated!" align="right" width="120" height="75">
 </a>
 
-## 1. TECHNICAL MANIFESTO | BadAzsWarrior
+-------------------
+**TECHNICAL MANIFESTO | BadAzsWarrior**
 
 **Version:** v17 Beta
 **Target:** Turtle WoW (Client 1.12.x – LUA 5.0)
 **Architecture:** Modular Combat Engine + Core Attack API
-**Author:** **ThePeregris**
+**Author:** ThePeregris
 
-O **BadAzsWarrior** é um **Decision Support System (DSS)** focado em **combate real**, não em simulação teórica.
-O motor prioriza **segurança de ataque**, **controle de rage**, **prevenção de clipping** e **automação consciente**, respeitando as limitações do Vanilla WoW.
+BadAzsWarrior is a **Decision Support System (DSS)** focused on real combat, not theoretical simulation. The engine prioritizes attack safety, rage control, clip prevention, and conscious automation, fully respecting the limitations of Vanilla WoW.
 
-✔️ **Fire & Forget**
-✔️ Sem loops artificiais
-✔️ Sem dependência obrigatória de addons externos
+✔️ Fire & Forget
+✔️ No artificial loops
+✔️ No mandatory dependency on external addons
 
 ---
 
-## 2. CORE FEATURES (O que o script realmente faz)
+## 2. CORE FEATURES (What the script actually does)
 
 ### ⚔️ Core Attack API
 
-Todos os módulos utilizam `BadAzs_StartAttack()` — uma chamada direta à **API do Core**, garantindo:
+All modules use **BadAzs_StartAttack()** — a direct call to the Core API, ensuring:
 
-* Início seguro de Auto-Attack
-* Nenhum “attack drop”
-* Compatibilidade total com Turtle WoW
+* Safe Auto-Attack initiation
+* No “attack drop”
+* Full compatibility with Turtle WoW
 
 ---
 
-### 🧠 Sistema de Dump Dinâmico (Dual Mode)
+### 🧠 Dynamic Dump System (Dual Mode)
 
-O gasto de Rage é controlado pelo **DumpMode**, configurável em tempo real:
+Rage expenditure is controlled by **DumpMode**, configurable in real time:
 
-#### 🔹 SLAM MODE (Padrão)
+#### 🔹 SLAM MODE (Default)
 
-* Prioridade em **Slam**
-* Thresholds:
+* Slam priority
 
-  * Slam: **Rage > 15**
-  * Heroic Strike: **Rage > 60**
-* Ideal para:
+**Thresholds:**
 
-  * Arms 2H
-  * Dano sustentado
-  * Melhor DPR (Damage per Rage)
+* Slam: Rage > 15
+* Heroic Strike: Rage > 60
+
+**Ideal for:**
+
+* Arms 2H
+* Sustained damage
+* Better DPR (Damage per Rage)
 
 #### 🔸 HS MODE
 
-* Prioridade em **Heroic Strike**
-* Thresholds:
+* Heroic Strike priority
 
-  * Slam: **Rage > 50**
-  * Heroic Strike: **Rage > 35–40**
-* Ideal para:
+**Thresholds:**
 
-  * Movimento intenso
-  * Fury
-  * Geração de threat
+* Slam: Rage > 50
+* Heroic Strike: Rage > 35–40
 
-📌 **Configuração:**
+**Ideal for:**
+
+* Heavy movement
+* Fury
+* Threat generation
+
+📌 **Configuration:**
 
 ```
-/badazs mode slam
-/badazs mode hs
+/baconfig mode [slam | hs]
 ```
 
 ---
 
 ### ⛔ Anti-Clip Protocol (Slam Lock)
 
-O sistema **nunca permite Slam em sequência**.
+The system never allows consecutive Slams.
 
-* Cooldown interno: **3.0 segundos**
-* Garante:
+* Internal cooldown: 3.0 seconds
 
-  * Pelo menos **1 White Hit**
-  * Regeneração natural de rage
-  * Zero “Slam starvation”
+**Guarantees:**
 
-Compatível com:
-
-* `SP_SwingTimer` (precisão máxima)
-* Fallback automático caso o addon não exista
+* At least 1 white hit
+* Natural rage regeneration
+* Zero “Slam starvation”
 
 ---
 
-## 3. MODIFICADORES DE TECLA (Tactical Overrides)
+## 3. KEY MODIFIERS (Tactical Overrides)
 
-### ⌨️ CTRL — Intercept Tático
+### ⌨️ CTRL — Tactical Intercept
 
-Em combate:
+In combat:
 
-* Bloqueia Intercept por padrão
-* **Segurar CTRL** autoriza:
+* Intercept is blocked by default
+* Holding CTRL authorizes:
 
-  1. Troca para Berserker Stance
-  2. Uso de Intercept
-  3. Retorno automático ao fluxo normal
+  * Switch to Berserker Stance
+  * Intercept usage
+  * Automatic return to normal flow
 
-Evita pulls acidentais e mortes em raid.
+Prevents accidental pulls and raid deaths.
 
 ---
 
-### ⌨️ ALT — Protocolo AoE (Crowd Control)
+### ⌨️ ALT — AoE Protocol (Crowd Control)
 
-Substitui totalmente a rotação single-target:
+Completely replaces the single-target rotation:
 
-#### Arms / Fury
+**Arms / Fury**
 
 * Sweeping Strikes
 * Whirlwind
-* Cleave (se rage permitir)
+* Cleave (if rage allows)
 
-#### Tank
+**Tank**
 
 * Thunder Clap
 * Cleave
-* Manutenção de aggro em múltiplos alvos
+* Multi-target aggro maintenance
 
 ---
 
 ### ⌨️ SHIFT
 
-Reservado (sem função ativa no código atual).
+Reserved (no active function in the current code).
 
 ---
 
-## 4. MÓDULOS DE COMBATE
+## 4. COMBAT MODULES
 
-### 🛡️ `/btank` — TANK
+### 🛡️ /batank — TANK
 
-**Função:** Mitigação + Threat
+**Role:** Mitigation + Threat
 
-* Força Defensive Stance
-* Auto-equip Shield (se ItemRack ativo)
-* Prioridade:
+* Forces Defensive Stance
+* Auto-equip Shield (if ItemRack is active)
 
-  1. Shield Block
-  2. Thunder Clap
-  3. Taunt automático se perder aggro
-  4. Shield Slam (se disponível)
-  5. Revenge
-  6. Sunder Armor
-* Heroic Strike apenas com Rage > 40
+**Priority:**
+
+* Shield Block
+
+* Thunder Clap
+
+* Automatic Taunt if aggro is lost
+
+* Shield Slam (if available)
+
+* Revenge
+
+* Sunder Armor
+
+* Heroic Strike only with Rage > 40
 
 ---
 
-### ⚔️ `/barms` — ARMS (2H)
+### ⚔️ /baarms — ARMS (2H)
 
-**Função:** Dano consistente + controle fino
+**Role:** Consistent damage + fine control
 
-* Battle Stance obrigatória
-* Execute absoluto < 20%
+* Mandatory Battle Stance
+* Absolute Execute < 20%
 * Mortal Strike / Bloodthirst
-* Master Strike (se disponível)
-* Rend aplicado se ausente
-* Slam controlado por Swing Timer
-* Battle Shout automático
+* Master Strike (if available)
+* Rend applied if missing
+* Slam controlled by Swing Timer
+* Automatic Battle Shout
 
 ---
 
-### 🔥 `/bfury` — FURY (DW)
+### 🔥 /bafury — FURY (DW)
 
-**Função:** Alta pressão e burst
+**Role:** High pressure and burst
 
-* Berserker Stance fixa
+* Fixed Berserker Stance
 * Auto-equip Dual Wield
-* Bloodrage + Berserker Rage em combate
+* Bloodrage + Berserker Rage in combat
 * Bloodthirst / Whirlwind
 * Execute < 20%
-* Heroic Strike conforme Dump Mode
-* Battle Shout automático
+* Heroic Strike according to Dump Mode
+* Automatic Battle Shout
 
 ---
 
-## 5. ITEMRACK (Opcional)
+## 5. ITEMRACK (Optional)
 
-Suporte nativo a **ItemRack**, se ativado:
+Native support for ItemRack, if enabled:
 
 ```
 /badazs itemrack on
 /badazs itemrack off
 ```
 
-### Sets esperados:
+**Expected sets:**
 
-| Set    | Função          |
-| ------ | --------------- |
-| **TH** | Two-Hand        |
-| **DW** | Dual Wield      |
-| **WS** | Weapon + Shield |
+| Set | Function        |
+| --- | --------------- |
+| TH  | Two-Hand        |
+| DW  | Dual Wield      |
+| WS  | Weapon + Shield |
 
-📌 O script **não quebra** se ItemRack não existir.
+📌 The script does not break if ItemRack is not installed.
 
 ---
 
-## 6. SISTEMA DE FILTRO DE ERROS
+## 6. ERROR FILTER SYSTEM
 
-O addon intercepta mensagens irrelevantes do sistema:
+The addon intercepts irrelevant system messages:
 
 * “Not ready”
 * “Out of range”
 * “Another action is in progress”
 * “Must be facing”
 
-Resultado:
-✔️ Chat limpo
-✔️ Zero spam visual
-✔️ Melhor leitura de eventos reais
+**Result:**
+✔️ Clean chat
+✔️ Zero visual spam
+✔️ Better visibility of real events
 
 ---
 
-## 7. DEPENDÊNCIAS
+## 7. DEPENDENCIES
 
-### Obrigatórias
+**Required**
 
-* Nenhuma
+* None
 
-### Opcionais (Recomendadas)
+**Optional (Recommended)**
 
-* **SP_SwingTimer** → Slam weaving preciso
-* **ItemRack** → Troca automática de armas
-* **UnitXP_SP3** → Detecção avançada de cooldowns
+* ItemRack → Automatic weapon swapping
+* UnitXP_SP3 → Advanced cooldown detection
 
 ---
 
-## 8. COMANDOS RÁPIDOS
+## 8. QUICK COMMANDS
 
-| Comando             | Ação       |
+| Command             | Action     |
 | ------------------- | ---------- |
-| `/barms`            | Arms       |
-| `/bfury`            | Fury       |
-| `/btank`            | Tank       |
-| `/badazs`           | Status     |
-| `/badazs mode slam` | Slam Focus |
-| `/badazs mode hs`   | HS Focus   |
+| /baarms             | Arms       |
+| /bafury             | Fury       |
+| /batank             | Tank       |
+| /badazs             | Status     |
+| /baconfig mode slam | Slam Focus |
+| /baconfig mode hs   | HS Focus   |
 
 ---
-## FILOSOFIA BADAZS
-> **Não é um bot.
-> Não é um script burro.
-> É um copiloto de combate.**
 
-O **BadAzsWarrior** reage ao jogo real, respeita o jogador e nunca tenta “jogar sozinho”.
----
-**BadAzsWarrior v15_Beta**
-*Precisão não é uma opção. É um requisito.*
+## BADAZS PHILOSOPHY
+
+This is not a bot.
+This is not a dumb script.
+**It is a combat copilot.**
+
+BadAzsWarrior reacts to real gameplay, respects the player, and never tries to “play by itself.”
