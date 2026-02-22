@@ -178,6 +178,8 @@ function BadAzsArms()
     local hasRend = BadAzs_TargetHasDebuff("Ability_Gouge")
     if not hasRend and thp > 20 then BadAzsW_Cast("Rend") end
 
+    if BadAzs_Ready("Master Strike") then BadAzsW_Cast("Master Strike") end
+    
     -- [[ DUMP: SLAM vs HS ]]
     local slam_thresh = 15 
     local hs_thresh = 60    
@@ -241,6 +243,8 @@ function BadAzsFury()
     if BadAzs_Ready("Bloodthirst") then BadAzsW_Cast("Bloodthirst") 
     elseif BadAzs_Ready("Mortal Strike") then BadAzsW_Cast("Mortal Strike") end
     
+    if BadAzs_Ready("Master Strike") then BadAzsW_Cast("Master Strike") end
+    
     if BadAzs_Ready("Whirlwind") then BadAzsW_Cast("Whirlwind") end
     
     local hs_thresh = 50
@@ -299,9 +303,3 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
-
-
-
-
-
-
