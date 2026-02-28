@@ -257,24 +257,14 @@ end
 -- [[ UTILIDADE ]]
 function BadAzs_ShieldInterrupt()
     local _,_,inBerserker = GetShapeshiftFormInfo(3)
-    local link = GetInventoryItemLink("player",17)
-
+    local link = GetInventoryItemLink("player", 17)
     if link then
-        BadAzs_TooltipScanner:ClearLines()
-        BadAzs_TooltipScanner:SetInventoryItem("player",17)
-
-        for i = 2, 10 do
-            local text = getglobal("BadAzs_TooltipScannerTextLeft"..i)
-            if text then
-                local line = text:GetText()
-                if line and string.find(line, "Defense") then
-                    BadAzsW_Cast("Shield Bash")
-                    return
-                end
-            end
+        local _, _, _, _, _, itemType, itemSubType = GetItemInfo(link)
+        if itemType == "Armor" and itemSubType == "Shields" then
+            BadAzsW_Cast("Shield Bash")
+            return
         end
     end
-
     if not inBerserker then
         BadAzsW_Cast("Berserker Stance")
     else
@@ -329,5 +319,6 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
