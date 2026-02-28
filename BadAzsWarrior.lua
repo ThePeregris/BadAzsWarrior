@@ -254,7 +254,32 @@ function BadAzsFury()
     
     if not BadAzs_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
+function BadAzs_ShieldInterrupt()
+    local _,_,inBerserker = GetShapeshiftFormInfo(3)
+    local link = GetInventoryItemLink("player",17)
 
+    if link then
+        BadAzs_TooltipScanner:ClearLines()
+        BadAzs_TooltipScanner:SetInventoryItem("player",17)
+
+        for i = 2, 10 do
+            local text = getglobal("BadAzs_TooltipScannerTextLeft"..i)
+            if text then
+                local line = text:GetText()
+                if line and string.find(line, "Defense") then
+                    BadAzsW_Cast("Shield Bash")
+                    return
+                end
+            end
+        end
+    end
+
+    if not inBerserker then
+        BadAzsW_Cast("Berserker Stance")
+    else
+        BadAzsW_Cast("Pummel")
+    end
+end
 -- [[ UTILIDADE ]]
 function BadAzsCrowd()
     BadAzsW_Cast("Attack")
@@ -303,3 +328,4 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
