@@ -258,12 +258,21 @@ end
 function BadAzs_ShieldInterrupt()
     local _,_,inBerserker = GetShapeshiftFormInfo(3)
     local link = GetInventoryItemLink("player", 17)
-    if link then
-        local _, _, _, _, _, itemType, itemSubType = GetItemInfo(link)
-        if itemType == "Armor" and itemSubType == "Shields" then
-            BadAzsW_Cast("Shield Bash")
-            return
+    if not link then
+        if not inBerserker then
+            BadAzsW_Cast("Berserker Stance")
+        else
+            BadAzsW_Cast("Pummel")
         end
+        return
+    end
+    local name, _, _, _, _, itemType, itemSubType = GetItemInfo(link)
+    if not name then
+        return
+    end
+    if itemType == "Armor" and itemSubType == "Shields" then
+        BadAzsW_Cast("Shield Bash")
+        return
     end
     if not inBerserker then
         BadAzsW_Cast("Berserker Stance")
@@ -319,6 +328,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
