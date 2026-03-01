@@ -254,30 +254,19 @@ function BadAzsFury()
     
     if not BadAzs_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
+
 -- [[ UTILIDADE ]]
 function BadAzs_ShieldInterrupt()
-    local _,_,inBerserker = GetShapeshiftFormInfo(3)
-    local link = GetInventoryItemLink("player", 17)
-    if not link then
-        if not inBerserker then
-            BadAzsW_Cast("Berserker Stance")
-        else
-            BadAzsW_Cast("Pummel")
-        end
+    local offhand = GetInventoryItemLink("player", 17)
+    if not offhand then
+        CastSpellByName("Pummel")
         return
     end
-    local name, _, _, _, _, itemType, itemSubType = GetItemInfo(link)
-    if not name then
-        return
-    end
-    if itemType == "Armor" and itemSubType == "Shields" then
-        BadAzsW_Cast("Shield Bash")
-        return
-    end
-    if not inBerserker then
-        BadAzsW_Cast("Berserker Stance")
+    local _, _, _, _, _, itemType, itemSubType, _, equipLoc = GetItemInfo(offhand)
+    if itemSubType == "Shields" or equipLoc == "INVTYPE_SHIELD" then
+        CastSpellByName("Shield Bash")
     else
-        BadAzsW_Cast("Pummel")
+        CastSpellByName("Pummel")
     end
 end
 
@@ -328,6 +317,7 @@ end
 SLASH_BAFURY1 = "/bafury"; SlashCmdList["BAFURY"] = BadAzs_FuryWrapper
 SLASH_BAARMS1 = "/baarms"; SlashCmdList["BAARMS"] = BadAzs_ArmsWrapper
 SLASH_BATANK1 = "/batank"; SlashCmdList["BATANK"] = BadAzsTank
+
 
 
 
