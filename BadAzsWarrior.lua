@@ -14,24 +14,23 @@ local BadAzsWar_L = {
     EN = {
         loaded        = "Loaded. Type /badazs warrior to configure.",
         title         = "BadAzs Warrior",
-        styleDetected = "Style detected: ",
-        twoHand       = "Two-Hand",
-        dualWield     = "Dual Wield",
-        profileTH     = "Profile: Two-Hand",
-        profileDW     = "Profile: Dual Wield",
+        profileArms    = "Arms (Battle Stance)",
+        profileFury    = "Fury (Berserker Stance)",
+        profileDefense = "Defense (Defensive Stance)",
         slamRage      = "Minimum Rage - Slam: ",
         hsRage        = "Minimum Rage - Heroic Strike: ",
         presetSlam    = "Preset Slam",
         presetHS      = "Preset Heroic Strike",
         itemrackLabel = "Enable ItemRack usage",
-        itemrackSub   = "(automatic weapon swap)",
-        explainTH     = "Used automatically when a two-handed weapon is equipped (Arms build). Slam fires on your swing timer; Heroic Strike dumps leftover rage. Both thresholds are yours to tune.",
-        explainDW     = "Used automatically when dual wielding (Fury build). No Slam here - Heroic Strike alone handles the rage dump between auto-attacks.",
-        explainRack   = "Requires the ItemRack addon with sets named exactly TH, DW and WS. When enabled, gear swaps automatically to match the detected style.",
+        itemrackSub   = "(automatic gear swap per build)",
+        explainArms    = "Used whenever you run /baarms, regardless of what weapon is physically equipped. Slam fires on your swing timer; Heroic Strike dumps leftover rage. Both thresholds are yours to tune.",
+        explainFury    = "Used whenever you run /bafury. No Slam here - Heroic Strike alone handles the rage dump between auto-attacks.",
+        explainDefense = "Used whenever you run /batank. Controls how much rage you keep in reserve before topping off with Heroic Strike on top of your threat rotation.",
+        explainRack   = "Requires the ItemRack addon with sets named exactly Arms, Fury and Defense. When enabled, gear swaps automatically to match the build you're running - not what's physically equipped.",
         cmdHeader     = "Macros",
         cmdList = {
-            "/baarms - Arms rotation (Two-Hand)",
-            "/bafury - Fury rotation (Dual Wield)",
+            "/baarms - Arms rotation",
+            "/bafury - Fury rotation",
             "/batank - Protection rotation",
             "Hold ALT - AoE rotation",
             "/badazs warrior - Open this panel"
@@ -40,24 +39,23 @@ local BadAzsWar_L = {
     PT = {
         loaded        = "Carregado. Digite /badazs warrior para configurar.",
         title         = "BadAzs Warrior",
-        styleDetected = "Estilo detectado: ",
-        twoHand       = "Duas Maos",
-        dualWield     = "Duas Armas",
-        profileTH     = "Perfil: Duas Maos",
-        profileDW     = "Perfil: Duas Armas",
+        profileArms    = "Arms (Battle Stance)",
+        profileFury    = "Fury (Berserker Stance)",
+        profileDefense = "Defense (Defensive Stance)",
         slamRage      = "Rage minima - Slam: ",
         hsRage        = "Rage minima - Heroic Strike: ",
         presetSlam    = "Preset Slam",
         presetHS      = "Preset Heroic Strike",
         itemrackLabel = "Ativar o uso do Item Rack",
-        itemrackSub   = "(troca de arma automatica)",
-        explainTH     = "Usado automaticamente quando voce equipa uma arma de duas maos (build Arms). Slam dispara no timer do swing; Heroic Strike gasta a rage sobrando. Os dois limiares sao ajustaveis.",
-        explainDW     = "Usado automaticamente em dual wield (build Fury). Sem Slam aqui - so Heroic Strike cuida do gasto de rage entre os golpes automaticos.",
-        explainRack   = "Exige o addon ItemRack com sets chamados exatamente TH, DW e WS. Quando ativado, a troca de equipamento e automatica conforme o estilo detectado.",
+        itemrackSub   = "(troca de equipamento automatica por build)",
+        explainArms    = "Usado sempre que voce roda /baarms, independente da arma fisicamente equipada. Slam dispara no timer do swing; Heroic Strike gasta a rage sobrando. Os dois limiares sao ajustaveis.",
+        explainFury    = "Usado sempre que voce roda /bafury. Sem Slam aqui - so Heroic Strike cuida do gasto de rage entre os golpes automaticos.",
+        explainDefense = "Usado sempre que voce roda /batank. Controla quanta rage voce guarda de reserva antes de completar com Heroic Strike por cima da rotacao de ameaca.",
+        explainRack   = "Exige o addon ItemRack com sets chamados exatamente Arms, Fury e Defense. Quando ativado, a troca de equipamento e automatica conforme a build que voce esta rodando - nao o que esta fisicamente equipado.",
         cmdHeader     = "Macros",
         cmdList = {
-            "/baarms - Rotacao Arms (Duas Maos)",
-            "/bafury - Rotacao Fury (Duas Armas)",
+            "/baarms - Rotacao Arms",
+            "/bafury - Rotacao Fury",
             "/batank - Rotacao Protection",
             "Segure ALT - Rotacao AoE",
             "/badazs warrior - Abre este painel"
@@ -73,20 +71,12 @@ BadAzsWar_TooltipScanner:SetOwner(WorldFrame, "ANCHOR_NONE")
 
 local WarSwingData = { main_start = 0 }
 local WarLastDodge = 0
-local WarIsAttacking = false
-
 local WarCombatFrame = CreateFrame("Frame")
-WarCombatFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
-WarCombatFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
 WarCombatFrame:RegisterEvent("CHAT_MSG_COMBAT_SELF_HITS")
 WarCombatFrame:RegisterEvent("CHAT_MSG_COMBAT_SELF_MISSES")
 WarCombatFrame:RegisterEvent("SPELLCAST_STOP")
 WarCombatFrame:SetScript("OnEvent", function()
-    if event == "PLAYER_ENTER_COMBAT" then
-        WarIsAttacking = true
-    elseif event == "PLAYER_LEAVE_COMBAT" then
-        WarIsAttacking = false
-    elseif event == "CHAT_MSG_COMBAT_SELF_HITS" then
+    if event == "CHAT_MSG_COMBAT_SELF_HITS" then
         WarSwingData.main_start = GetTime()
     elseif event == "CHAT_MSG_COMBAT_SELF_MISSES" then
         WarSwingData.main_start = GetTime()
@@ -98,9 +88,15 @@ end)
 
 local function BadAzsW_RawCast(spellName)
     if spellName == "Attack" then
-        if not WarIsAttacking and UnitExists("target") and not UnitIsDead("target") then
+        -- AttackTarget() e seguro de chamar toda vez: ao contrario do botao de
+        -- ataque (que E um toggle), ele nao desliga o auto-attack se voce ja
+        -- estiver atacando o mesmo alvo. Nao precisa (e nao deve) rastrear
+        -- "ja esta atacando" via PLAYER_ENTER_COMBAT - esse evento dispara so
+        -- por VOCE estar em combate (ex: apanhando), nao por SEU auto-attack
+        -- estar ligado, e isso travava o Heroic Strike sem nenhum golpe real
+        -- acontecendo pra ele modificar.
+        if UnitExists("target") and not UnitIsDead("target") then
             AttackTarget()
-            WarIsAttacking = true
         end
         return
     end
@@ -154,23 +150,10 @@ local function BadAzsW_GetTargetHP()
     return (h / hmax) * 100
 end
 
--- Detecta o estilo de combate pela arma realmente equipada no slot 16 (mainhand).
--- "TH" = arma de duas maos | "DW" = uma maos (dual wield ou 1H+nada)
--- Isso reflete a build de talentos: 2H e DW sao arvores diferentes, entao
--- os thresholds de rage tambem precisam ser diferentes por estilo.
-function BadAzsW_DetectStyle()
-    local mainLink = GetInventoryItemLink("player", 16)
-    if not mainLink then return "DW" end
-    local _, _, _, _, _, _, _, _, equipLoc = GetItemInfo(mainLink)
-    if equipLoc == "INVTYPE_2HWEAPON" then return "TH" end
-    return "DW"
-end
-
 -- ==========================================================
 -- [1] CACHE DE SLOT / EQUIPAMENTO / STANCE
 -- ==========================================================
-local WarriorSlotCache = { ["Heroic Strike"] = nil, ["Cleave"] = nil }
-local BadAzsSets = { TwoHand = "TH", DualWield = "DW", Shield = "WS" }
+local WarriorSlotCache = { ["Heroic Strike"] = false, ["Cleave"] = false }
 
 local loadFrame = CreateFrame("Frame")
 loadFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
@@ -179,15 +162,27 @@ loadFrame:SetScript("OnEvent", function()
     if event == "PLAYER_ENTERING_WORLD" then
         if not BadAzsWarDB then BadAzsWarDB = {} end
         if BadAzsWarDB.UseItemRack == nil then BadAzsWarDB.UseItemRack = false end
-        if not BadAzsWarDB.TH then BadAzsWarDB.TH = { SlamThreshold = 15, HSThreshold = 60 } end
-        if not BadAzsWarDB.DW then BadAzsWarDB.DW = { HSThreshold = 50 } end
+
+        -- Migracao: perfis antigos por arma (TH/DW) viram perfis por build (arms/fury/defense)
+        if not BadAzsWarDB.arms then
+            BadAzsWarDB.arms = BadAzsWarDB.TH or { SlamThreshold = 15, HSThreshold = 60 }
+        end
+        if not BadAzsWarDB.fury then
+            BadAzsWarDB.fury = BadAzsWarDB.DW or { HSThreshold = 50 }
+        end
+        if not BadAzsWarDB.defense then
+            BadAzsWarDB.defense = { HSThreshold = 55 }
+        end
+        BadAzsWarDB.TH = nil
+        BadAzsWarDB.DW = nil
+
         if not BadAzsWarDB.Locale then BadAzsWarDB.Locale = "EN" end
 
         DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " " .. BadAzsWar_L[BadAzsWarDB.Locale].loaded)
     end
 
     if event == "PLAYER_ENTERING_WORLD" or event == "ACTIONBAR_SLOT_CHANGED" then
-        for k in pairs(WarriorSlotCache) do WarriorSlotCache[k] = nil end
+        for k in pairs(WarriorSlotCache) do WarriorSlotCache[k] = false end
         for i = 1, 120 do
             if HasAction(i) then
                 local texture = GetActionTexture(i)
@@ -213,16 +208,14 @@ local function BadAzsW_Cast(spellName)
     BadAzsW_RawCast(spellName)
 end
 
+-- mode = "Arms" | "Fury" | "Defense" - precisa bater com o nome exato do set no ItemRack
 local function BadAzs_Equip(mode)
     if not BadAzsWarDB.UseItemRack then return end
     local EquipFunc = nil
     if ItemRack and type(ItemRack.EquipSet) == "function" then EquipFunc = ItemRack.EquipSet
     elseif type(ItemRack_EquipSet) == "function" then EquipFunc = ItemRack_EquipSet end
     if not EquipFunc then return end
-    if mode == "TH" then EquipFunc(BadAzsSets.TwoHand)
-    elseif mode == "DW" then EquipFunc(BadAzsSets.DualWield)
-    elseif mode == "WS" then EquipFunc(BadAzsSets.Shield)
-    end
+    EquipFunc(mode)
 end
 
 function BadAzs_GetStance()
@@ -251,7 +244,7 @@ function BadAzsTank()
     local inCombat = UnitAffectingCombat("player")
 
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzsW_Ready("Charge") then
-        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("WS"); return
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Defense"); return
         else BadAzsW_Cast("Charge") end
     end
 
@@ -260,11 +253,11 @@ function BadAzsTank()
         if stance == 1 then BadAzsW_Cast("Overpower"); return end
     end
 
-    if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("WS"); return end
-    if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("WS") end
+    if stance ~= 2 then BadAzsW_Cast("Defensive Stance"); BadAzs_Equip("Defense"); return end
+    if BadAzsWarDB.UseItemRack and not BadAzs_HasShield() then BadAzs_Equip("Defense") end
 
     if inCombat and BadAzsW_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
-    if rage > 55 then BadAzsW_Cast("Heroic Strike") end
+    if rage > (BadAzsWarDB.defense.HSThreshold or 55) then BadAzsW_Cast("Heroic Strike") end
 
     if UnitExists("targettarget") and not UnitIsUnit("targettarget", "player") then
         BadAzsW_Cast("Taunt")
@@ -296,7 +289,7 @@ function BadAzsArms()
     local inCombat = UnitAffectingCombat("player")
 
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzsW_Ready("Charge") then
-        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return
         else BadAzsW_Cast("Charge") end
     end
 
@@ -306,12 +299,12 @@ function BadAzsArms()
     end
 
     if thp > 0 and thp <= 20 then
-        if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH") else BadAzsW_Cast("Execute") end
+        if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms") else BadAzsW_Cast("Execute") end
         return
     end
 
-    if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return end
-    if BadAzsWarDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("TH") end
+    if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return end
+    if BadAzsWarDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("Arms") end
 
     if rage < 30 and inCombat and BadAzsW_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
     if BadAzsW_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
@@ -326,9 +319,8 @@ function BadAzsArms()
 
     if BadAzsW_Ready("Master Strike") then BadAzsW_Cast("Master Strike") end
 
-    -- [[ DUMP: limites vêm do perfil correspondente à arma equipada (TH ou DW) ]]
-    local style = BadAzsW_DetectStyle()
-    local profile = (style == "TH") and BadAzsWarDB.TH or BadAzsWarDB.DW
+    -- [[ DUMP: limites vem do perfil da build Arms (configuravel no painel) ]]
+    local profile = BadAzsWarDB.arms
     local slam_thresh = profile.SlamThreshold or 15
     local hs_thresh = profile.HSThreshold or 60
 
@@ -361,7 +353,7 @@ function BadAzsFury()
     local inCombat = UnitAffectingCombat("player")
 
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzsW_Ready("Charge") then
-        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH"); return
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return
         else BadAzsW_Cast("Charge") end
     end
 
@@ -370,8 +362,8 @@ function BadAzsFury()
         return
     end
 
-    if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("DW"); return end
-    if BadAzsWarDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then BadAzs_Equip("DW") end
+    if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("Fury"); return end
+    if BadAzsWarDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then BadAzs_Equip("Fury") end
 
     if inCombat and BadAzsW_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
     if inCombat and BadAzsW_Ready("Berserker Rage") then BadAzsW_Cast("Berserker Rage") end
@@ -388,7 +380,7 @@ function BadAzsFury()
     if BadAzsW_Ready("Master Strike") then BadAzsW_Cast("Master Strike") end
     if BadAzsW_Ready("Whirlwind") then BadAzsW_Cast("Whirlwind") end
 
-    local hs_thresh = BadAzsWarDB.DW.HSThreshold or 50
+    local hs_thresh = BadAzsWarDB.fury.HSThreshold or 50
     if rage > hs_thresh then BadAzsW_Cast("Heroic Strike") end
     if not BadAzsW_HasBuff("BattleShout") then BadAzsW_Cast("Battle Shout") end
 end
@@ -413,14 +405,14 @@ function BadAzsCrowd()
     local rage = UnitMana("player")
     if stance == 1 then
         BadAzsW_Cast("Sweeping Strikes"); BadAzsW_Cast("Thunder Clap")
-        BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("TH")
+        BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("Arms")
         return
     end
     if stance == 3 then
         BadAzsW_Cast("Whirlwind"); if rage >= 20 then BadAzsW_Cast("Cleave") end
         return
     end
-    if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("TH") end
+    if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms") end
 end
 
 function BadAzs_ArmsWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsArms() end end
@@ -429,6 +421,7 @@ function BadAzs_FuryWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsFu
 -- ==========================================================
 -- [6] PAINEL GRÁFICO DE CONFIGURAÇÃO  (/badazs warrior)
 -- Formato de livro: pagina esquerda = controles, pagina direita = explicacoes
+-- Perfis organizados por BUILD (Arms/Fury/Defense), nao por arma equipada.
 -- ==========================================================
 local Panel = CreateFrame("Frame", "BadAzsWarriorPanel", UIParent)
 Panel:SetWidth(620)
@@ -476,88 +469,106 @@ local langBtn = CreateFrame("Button", "BadAzsWar_LangBtn", Panel, "UIPanelButton
 langBtn:SetPoint("TOPLEFT", 8, -10)
 langBtn:SetWidth(44); langBtn:SetHeight(20)
 
-local styleLabel = Panel:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-styleLabel:SetPoint("TOP", 0, -40)
-
 -- ==================== PAGINA ESQUERDA: CONTROLES ====================
-local thHeader = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-thHeader:SetPoint("TOP", 0, -14)
+local armsHeader = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+armsHeader:SetPoint("TOP", 0, -14)
 
 local slamSlider = CreateFrame("Slider", "BadAzsWar_SlamSlider", LeftPage, "OptionsSliderTemplate")
-slamSlider:SetPoint("TOP", 0, -40)
+slamSlider:SetPoint("TOP", 0, -38)
 slamSlider:SetWidth(240)
 slamSlider:SetMinMaxValues(0, 100)
 slamSlider:SetValueStep(5)
 getglobal(slamSlider:GetName().."Low"):SetText("0")
 getglobal(slamSlider:GetName().."High"):SetText("100")
 slamSlider:SetScript("OnValueChanged", function()
-    BadAzsWarDB.TH.SlamThreshold = this:GetValue()
+    BadAzsWarDB.arms.SlamThreshold = this:GetValue()
     getglobal(this:GetName().."Text"):SetText(BadAzsWar_L[BadAzsWarDB.Locale].slamRage .. this:GetValue())
 end)
 
-local hsSliderTH = CreateFrame("Slider", "BadAzsWar_HSSliderTH", LeftPage, "OptionsSliderTemplate")
-hsSliderTH:SetPoint("TOP", 0, -90)
-hsSliderTH:SetWidth(240)
-hsSliderTH:SetMinMaxValues(0, 100)
-hsSliderTH:SetValueStep(5)
-getglobal(hsSliderTH:GetName().."Low"):SetText("0")
-getglobal(hsSliderTH:GetName().."High"):SetText("100")
-hsSliderTH:SetScript("OnValueChanged", function()
-    BadAzsWarDB.TH.HSThreshold = this:GetValue()
+local hsSliderArms = CreateFrame("Slider", "BadAzsWar_HSSliderArms", LeftPage, "OptionsSliderTemplate")
+hsSliderArms:SetPoint("TOP", 0, -86)
+hsSliderArms:SetWidth(240)
+hsSliderArms:SetMinMaxValues(0, 100)
+hsSliderArms:SetValueStep(5)
+getglobal(hsSliderArms:GetName().."Low"):SetText("0")
+getglobal(hsSliderArms:GetName().."High"):SetText("100")
+hsSliderArms:SetScript("OnValueChanged", function()
+    BadAzsWarDB.arms.HSThreshold = this:GetValue()
     getglobal(this:GetName().."Text"):SetText(BadAzsWar_L[BadAzsWarDB.Locale].hsRage .. this:GetValue())
 end)
 
 local slamBtn = CreateFrame("Button", nil, LeftPage, "UIPanelButtonTemplate")
-slamBtn:SetPoint("TOP", -62, -118)
+slamBtn:SetPoint("TOP", -62, -114)
 slamBtn:SetWidth(110); slamBtn:SetHeight(20)
 
 local hsBtn = CreateFrame("Button", nil, LeftPage, "UIPanelButtonTemplate")
-hsBtn:SetPoint("TOP", 68, -118)
+hsBtn:SetPoint("TOP", 68, -114)
 hsBtn:SetWidth(130); hsBtn:SetHeight(20)
 
-local dwHeader = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-dwHeader:SetPoint("TOP", 0, -156)
+local furyHeader = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+furyHeader:SetPoint("TOP", 0, -150)
 
-local hsSliderDW = CreateFrame("Slider", "BadAzsWar_HSSliderDW", LeftPage, "OptionsSliderTemplate")
-hsSliderDW:SetPoint("TOP", 0, -182)
-hsSliderDW:SetWidth(240)
-hsSliderDW:SetMinMaxValues(0, 100)
-hsSliderDW:SetValueStep(5)
-getglobal(hsSliderDW:GetName().."Low"):SetText("0")
-getglobal(hsSliderDW:GetName().."High"):SetText("100")
-hsSliderDW:SetScript("OnValueChanged", function()
-    BadAzsWarDB.DW.HSThreshold = this:GetValue()
+local hsSliderFury = CreateFrame("Slider", "BadAzsWar_HSSliderFury", LeftPage, "OptionsSliderTemplate")
+hsSliderFury:SetPoint("TOP", 0, -174)
+hsSliderFury:SetWidth(240)
+hsSliderFury:SetMinMaxValues(0, 100)
+hsSliderFury:SetValueStep(5)
+getglobal(hsSliderFury:GetName().."Low"):SetText("0")
+getglobal(hsSliderFury:GetName().."High"):SetText("100")
+hsSliderFury:SetScript("OnValueChanged", function()
+    BadAzsWarDB.fury.HSThreshold = this:GetValue()
     getglobal(this:GetName().."Text"):SetText(BadAzsWar_L[BadAzsWarDB.Locale].hsRage .. this:GetValue())
 end)
 
+local defenseHeader = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+defenseHeader:SetPoint("TOP", 0, -210)
+
+local hsSliderDefense = CreateFrame("Slider", "BadAzsWar_HSSliderDefense", LeftPage, "OptionsSliderTemplate")
+hsSliderDefense:SetPoint("TOP", 0, -234)
+hsSliderDefense:SetWidth(240)
+hsSliderDefense:SetMinMaxValues(0, 100)
+hsSliderDefense:SetValueStep(5)
+getglobal(hsSliderDefense:GetName().."Low"):SetText("0")
+getglobal(hsSliderDefense:GetName().."High"):SetText("100")
+hsSliderDefense:SetScript("OnValueChanged", function()
+    BadAzsWarDB.defense.HSThreshold = this:GetValue()
+    getglobal(this:GetName().."Text"):SetText(BadAzsWar_L[BadAzsWarDB.Locale].hsRage .. this:GetValue())
+end)
+
+-- Checkbox: ItemRack (alinhado a esquerda, label em 2 linhas)
 local rackCheck = CreateFrame("CheckButton", "BadAzsWar_RackCheck", LeftPage, "UICheckButtonTemplate")
-rackCheck:SetPoint("TOPLEFT", 20, -230)
+rackCheck:SetPoint("TOPLEFT", 26, -274)
 getglobal(rackCheck:GetName().."Text"):SetText("")
 
 local rackLabel = LeftPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 rackLabel:SetPoint("LEFT", rackCheck, "RIGHT", 4, 0)
 rackLabel:SetJustifyH("LEFT")
-rackLabel:SetWidth(200)
 
 rackCheck:SetScript("OnClick", function()
     BadAzsWarDB.UseItemRack = (this:GetChecked() == 1)
 end)
 
 -- ==================== PAGINA DIREITA: EXPLICACOES ====================
-local explainTH = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-explainTH:SetPoint("TOP", 0, -14)
-explainTH:SetWidth(260)
-explainTH:SetJustifyH("LEFT")
-explainTH:SetSpacing(2)
+local explainArms = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+explainArms:SetPoint("TOP", 0, -14)
+explainArms:SetWidth(260)
+explainArms:SetJustifyH("LEFT")
+explainArms:SetSpacing(2)
 
-local explainDW = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-explainDW:SetPoint("TOP", 0, -156)
-explainDW:SetWidth(260)
-explainDW:SetJustifyH("LEFT")
-explainDW:SetSpacing(2)
+local explainFury = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+explainFury:SetPoint("TOP", 0, -150)
+explainFury:SetWidth(260)
+explainFury:SetJustifyH("LEFT")
+explainFury:SetSpacing(2)
+
+local explainDefense = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+explainDefense:SetPoint("TOP", 0, -210)
+explainDefense:SetWidth(260)
+explainDefense:SetJustifyH("LEFT")
+explainDefense:SetSpacing(2)
 
 local explainRack = RightPage:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-explainRack:SetPoint("TOP", 0, -230)
+explainRack:SetPoint("TOP", 0, -274)
 explainRack:SetWidth(260)
 explainRack:SetJustifyH("LEFT")
 explainRack:SetSpacing(2)
@@ -583,32 +594,29 @@ function BadAzsWar_RefreshPanel()
     title:SetText("|cff355E3B" .. L.title .. "|r")
     langBtn:SetText(BadAzsWarDB.Locale)
 
-    local style = BadAzsW_DetectStyle()
-    if style == "TH" then
-        styleLabel:SetText(L.styleDetected .. "|cff00ff00" .. L.twoHand .. "|r")
-    else
-        styleLabel:SetText(L.styleDetected .. "|cff00ccff" .. L.dualWield .. "|r")
-    end
-
-    thHeader:SetText("|cffffd200" .. L.profileTH .. "|r")
-    dwHeader:SetText("|cffffd200" .. L.profileDW .. "|r")
+    armsHeader:SetText("|cffffd200" .. L.profileArms .. "|r")
+    furyHeader:SetText("|cffffd200" .. L.profileFury .. "|r")
+    defenseHeader:SetText("|cffffd200" .. L.profileDefense .. "|r")
 
     slamBtn:SetText(L.presetSlam)
     hsBtn:SetText(L.presetHS)
 
-    slamSlider:SetValue(BadAzsWarDB.TH.SlamThreshold or 15)
-    hsSliderTH:SetValue(BadAzsWarDB.TH.HSThreshold or 60)
-    hsSliderDW:SetValue(BadAzsWarDB.DW.HSThreshold or 50)
+    slamSlider:SetValue(BadAzsWarDB.arms.SlamThreshold or 15)
+    hsSliderArms:SetValue(BadAzsWarDB.arms.HSThreshold or 60)
+    hsSliderFury:SetValue(BadAzsWarDB.fury.HSThreshold or 50)
+    hsSliderDefense:SetValue(BadAzsWarDB.defense.HSThreshold or 55)
 
-    getglobal(slamSlider:GetName().."Text"):SetText(L.slamRage .. (BadAzsWarDB.TH.SlamThreshold or 15))
-    getglobal(hsSliderTH:GetName().."Text"):SetText(L.hsRage .. (BadAzsWarDB.TH.HSThreshold or 60))
-    getglobal(hsSliderDW:GetName().."Text"):SetText(L.hsRage .. (BadAzsWarDB.DW.HSThreshold or 50))
+    getglobal(slamSlider:GetName().."Text"):SetText(L.slamRage .. (BadAzsWarDB.arms.SlamThreshold or 15))
+    getglobal(hsSliderArms:GetName().."Text"):SetText(L.hsRage .. (BadAzsWarDB.arms.HSThreshold or 60))
+    getglobal(hsSliderFury:GetName().."Text"):SetText(L.hsRage .. (BadAzsWarDB.fury.HSThreshold or 50))
+    getglobal(hsSliderDefense:GetName().."Text"):SetText(L.hsRage .. (BadAzsWarDB.defense.HSThreshold or 55))
 
     if BadAzsWarDB.UseItemRack then rackCheck:SetChecked(1) else rackCheck:SetChecked(nil) end
-    rackLabel:SetText(L.itemrackLabel)
+    rackLabel:SetText(L.itemrackLabel .. "\n|cff888888" .. L.itemrackSub .. "|r")
 
-    explainTH:SetText(L.explainTH)
-    explainDW:SetText(L.explainDW)
+    explainArms:SetText(L.explainArms)
+    explainFury:SetText(L.explainFury)
+    explainDefense:SetText(L.explainDefense)
     explainRack:SetText(L.explainRack)
 
     cmdHeader:SetText("|cffffd200" .. L.cmdHeader .. "|r")
@@ -627,20 +635,19 @@ langBtn:SetScript("OnClick", function()
 end)
 
 slamBtn:SetScript("OnClick", function()
-    BadAzsWarDB.TH.SlamThreshold = 15
-    BadAzsWarDB.TH.HSThreshold = 60
+    BadAzsWarDB.arms.SlamThreshold = 15
+    BadAzsWarDB.arms.HSThreshold = 60
     BadAzsWar_RefreshPanel()
 end)
 
 hsBtn:SetScript("OnClick", function()
-    BadAzsWarDB.TH.SlamThreshold = 50
-    BadAzsWarDB.TH.HSThreshold = 35
+    BadAzsWarDB.arms.SlamThreshold = 50
+    BadAzsWarDB.arms.HSThreshold = 35
     BadAzsWar_RefreshPanel()
 end)
 
 Panel:SetScript("OnShow", function() BadAzsWar_RefreshPanel() end)
 
--- ==========================================================
 -- ==========================================================
 -- [7] SLASH COMMANDS
 -- ==========================================================
