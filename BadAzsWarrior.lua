@@ -1,7 +1,7 @@
 -- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
 -- Author:  ThePeregris
 -- Version: 18.2 (Self-Sufficient + Book Panel + Localizacao EN/PT)
--- Target:  Turtle WoW (1.12 / LUA 5.0)
+-- Target:  Vanilla/Classic WoW (1.12 / LUA 5.0)
 -- Requires: BadAzs Core (apenas utilitários universais: Vision/Focus/Racial)
 
 local BadAzsVersion = "|cff355E3B[BadAzsWarrior v18.2]|r"
@@ -447,9 +447,9 @@ LeftPage:SetWidth(300)
 LeftPage:SetHeight(400)
 LeftPage:SetPoint("TOPLEFT", Panel, "TOPLEFT", 0, -60)
 LeftPage:SetBackdrop({
-    bgFile = "Interface/QuestFrame/QuestBG",
+    bgFile = "Interface/DialogFrame/UI-DialogBox-Background",
     edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-    tile = false, edgeSize = 32,
+    tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 12, top = 12, bottom = 11 }
 })
 
@@ -458,9 +458,9 @@ RightPage:SetWidth(300)
 RightPage:SetHeight(400)
 RightPage:SetPoint("TOPLEFT", Panel, "TOPLEFT", 320, -60)
 RightPage:SetBackdrop({
-    bgFile = "Interface/QuestFrame/QuestBG",
+    bgFile = "Interface/DialogFrame/UI-DialogBox-Background",
     edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
-    tile = false, edgeSize = 32,
+    tile = true, tileSize = 32, edgeSize = 32,
     insets = { left = 11, right = 12, top = 12, bottom = 11 }
 })
 
