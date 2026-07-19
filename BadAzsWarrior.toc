@@ -2,7 +2,7 @@
 ## Title: [|cff355E3BB|r]adAzs |cff32CD32Warrior|r
 ## Notes: BadAzs - Warrior Module
 ## Author: ThePeregris
-## Version: 17.4
+## Version: 18.2
 ## SavedVariables: BadAzsWarDB
 ## Dependencies: BadAzsCore
 ## OptionalDeps: ItemRack
