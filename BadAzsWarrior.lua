@@ -88,16 +88,9 @@ end)
 
 local function BadAzsW_RawCast(spellName)
     if spellName == "Attack" then
-        -- AttackTarget() e seguro de chamar toda vez: ao contrario do botao de
-        -- ataque (que E um toggle), ele nao desliga o auto-attack se voce ja
-        -- estiver atacando o mesmo alvo. Nao precisa (e nao deve) rastrear
-        -- "ja esta atacando" via PLAYER_ENTER_COMBAT - esse evento dispara so
-        -- por VOCE estar em combate (ex: apanhando), nao por SEU auto-attack
-        -- estar ligado, e isso travava o Heroic Strike sem nenhum golpe real
-        -- acontecendo pra ele modificar.
-        if UnitExists("target") and not UnitIsDead("target") then
-            AttackTarget()
-        end
+        -- Toggle de auto-attack agora mora no Core (BadAzs_StartAttack) - e
+        -- mecanica identica pra qualquer classe, unica fonte de verdade.
+        if BadAzs_StartAttack then BadAzs_StartAttack() end
         return
     end
     CastSpellByName(spellName)
