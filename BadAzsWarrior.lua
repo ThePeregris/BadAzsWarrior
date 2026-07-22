@@ -282,7 +282,7 @@ function BadAzsArms()
     local inCombat = UnitAffectingCombat("player")
 
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzsW_Ready("Charge") then
-        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); return
         else BadAzsW_Cast("Charge") end
     end
 
@@ -292,12 +292,11 @@ function BadAzsArms()
     end
 
     if thp > 0 and thp <= 20 then
-        if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms") else BadAzsW_Cast("Execute") end
+        if stance == 2 then BadAzsW_Cast("Battle Stance") else BadAzsW_Cast("Execute") end
         return
     end
 
-    if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return end
-    if BadAzsWarDB.UseItemRack and BadAzs_HasOffHand() then BadAzs_Equip("Arms") end
+    if stance ~= 1 then BadAzsW_Cast("Battle Stance"); return end
 
     if rage < 30 and inCombat and BadAzsW_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
     if BadAzsW_Ready("Victory Rush") then BadAzsW_Cast("Victory Rush") end
@@ -346,7 +345,7 @@ function BadAzsFury()
     local inCombat = UnitAffectingCombat("player")
 
     if not inCombat and not CheckInteractDistance("target", 3) and BadAzsW_Ready("Charge") then
-        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms"); return
+        if stance ~= 1 then BadAzsW_Cast("Battle Stance"); return
         else BadAzsW_Cast("Charge") end
     end
 
@@ -355,8 +354,7 @@ function BadAzsFury()
         return
     end
 
-    if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("Fury"); return end
-    if BadAzsWarDB.UseItemRack and (BadAzs_HasShield() or not BadAzs_HasOffHand()) then BadAzs_Equip("Fury") end
+    if stance ~= 3 then BadAzsW_Cast("Berserker Stance"); return end
 
     if inCombat and BadAzsW_Ready("Bloodrage") then BadAzsW_Cast("Bloodrage") end
     if inCombat and BadAzsW_Ready("Berserker Rage") then BadAzsW_Cast("Berserker Rage") end
@@ -398,14 +396,14 @@ function BadAzsCrowd()
     local rage = UnitMana("player")
     if stance == 1 then
         BadAzsW_Cast("Sweeping Strikes"); BadAzsW_Cast("Thunder Clap")
-        BadAzsW_Cast("Berserker Stance"); BadAzs_Equip("Arms")
+        BadAzsW_Cast("Berserker Stance")
         return
     end
     if stance == 3 then
         BadAzsW_Cast("Whirlwind"); if rage >= 20 then BadAzsW_Cast("Cleave") end
         return
     end
-    if stance == 2 then BadAzsW_Cast("Battle Stance"); BadAzs_Equip("Arms") end
+    if stance == 2 then BadAzsW_Cast("Battle Stance") end
 end
 
 function BadAzs_ArmsWrapper() if IsAltKeyDown() then BadAzsCrowd() else BadAzsArms() end end
