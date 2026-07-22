@@ -1,4 +1,4 @@
--- [[ [|cff355E3BB|r]adAzs |cff32CD32Warrior|r ]]
+-- [[ [|cff355E3BB|r]adAzs |cffC79C6EWarrior|r ]]
 -- Author:  ThePeregris
 -- Version: 18.2 (Self-Sufficient + Book Panel + Localizacao EN/PT)
 -- Target:  Vanilla/Classic WoW (1.12 / LUA 5.0)
@@ -452,7 +452,7 @@ RightPage:SetBackdrop({
 
 local title = Panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 title:SetPoint("TOP", 0, -16)
-title:SetText("|cff355E3BBadAzs Warrior|r")
+title:SetText("|cffC79C6EBadAzs Warrior|r")
 
 local closeBtn = CreateFrame("Button", "BadAzsWarriorPanelClose", Panel, "UIPanelCloseButton")
 closeBtn:SetPoint("TOPRIGHT", -4, -4)
@@ -584,7 +584,7 @@ cmdText:SetSpacing(3)
 function BadAzsWar_RefreshPanel()
     local L = BadAzsWar_L[BadAzsWarDB.Locale]
 
-    title:SetText("|cff355E3B" .. L.title .. "|r")
+    title:SetText("|cffC79C6E" .. L.title .. "|r")
     langBtn:SetText(BadAzsWarDB.Locale)
 
     armsHeader:SetText("|cffffd200" .. L.profileArms .. "|r")
