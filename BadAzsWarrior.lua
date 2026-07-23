@@ -1,6 +1,6 @@
 -- [[ [|cff355E3BB|r]adAzs |cffC79C6EWarrior|r ]]
 -- Author:  ThePeregris
--- Version: 18.2 (Self-Sufficient + Book Panel + Localizacao EN/PT)
+-- Version: 18.2 (Self-Sufficient + Book Panel + Localizacao EN/BR)
 -- Target:  Vanilla/Classic WoW (1.12 / LUA 5.0)
 -- Requires: BadAzs Core (apenas utilitários universais: Vision/Focus/Racial)
 
@@ -36,7 +36,7 @@ local BadAzsWar_L = {
             "/badazs warrior - Open this panel"
         }
     },
-    PT = {
+    BR = {
         loaded        = "Carregado. Digite /badazs warrior para configurar.",
         title         = "BadAzs Warrior",
         profileArms    = "Arms (Battle Stance)",
@@ -455,7 +455,7 @@ title:SetText("|cffC79C6EBadAzs Warrior|r")
 local closeBtn = CreateFrame("Button", "BadAzsWarriorPanelClose", Panel, "UIPanelCloseButton")
 closeBtn:SetPoint("TOPRIGHT", -4, -4)
 
--- Botao de idioma (EN/PT)
+-- Botao de idioma (EN/BR)
 local langBtn = CreateFrame("Button", "BadAzsWar_LangBtn", Panel, "UIPanelButtonTemplate")
 langBtn:SetPoint("TOPLEFT", 8, -10)
 langBtn:SetWidth(44); langBtn:SetHeight(20)
@@ -621,7 +621,7 @@ function BadAzsWar_RefreshPanel()
 end
 
 langBtn:SetScript("OnClick", function()
-    if BadAzsWarDB.Locale == "EN" then BadAzsWarDB.Locale = "PT" else BadAzsWarDB.Locale = "EN" end
+    if BadAzsWarDB.Locale == "EN" then BadAzsWarDB.Locale = "BR" else BadAzsWarDB.Locale = "EN" end
     BadAzsWar_RefreshPanel()
 end)
 
