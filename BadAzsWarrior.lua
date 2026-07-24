@@ -170,6 +170,7 @@ loadFrame:SetScript("OnEvent", function()
         BadAzsWarDB.DW = nil
 
         if not BadAzsWarDB.Locale then BadAzsWarDB.Locale = "EN" end
+        if BadAzsWarDB.Locale == "PT" then BadAzsWarDB.Locale = "BR" end
 
         DEFAULT_CHAT_FRAME:AddMessage(BadAzsVersion .. " " .. BadAzsWar_L[BadAzsWarDB.Locale].loaded)
     end
@@ -195,9 +196,33 @@ loadFrame:SetScript("OnEvent", function()
     end
 end)
 
+-- ==========================================================
+-- MEMORIA DE IMUNIDADE: escuta "Immune" no UIErrorsFrame e lembra
+-- qual alvo (por nome) e imune a qual spell, pra nao ficar tentando de
+-- novo e desperdicando rage/mana/GCD a toa.
+-- ==========================================================
+local BadAzsW_ImmuneCache = {}
+local BadAzsW_LastSpell = nil
+
+local BadAzsW_ImmunityFrame = CreateFrame("Frame")
+BadAzsW_ImmunityFrame:RegisterEvent("UI_ERROR_MESSAGE")
+BadAzsW_ImmunityFrame:SetScript("OnEvent", function()
+    if arg1 and string.find(arg1, "Immune") and BadAzsW_LastSpell and UnitExists("target") then
+        local key = UnitName("target") .. "|" .. BadAzsW_LastSpell
+        BadAzsW_ImmuneCache[key] = true
+    end
+end)
+
+local function BadAzsW_IsImmune(spellName)
+    if not UnitExists("target") then return false end
+    local key = UnitName("target") .. "|" .. spellName
+    return BadAzsW_ImmuneCache[key] == true
+end
+
 local function BadAzsW_Cast(spellName)
     local slot = WarriorSlotCache[spellName]
     if slot and IsCurrentAction(slot) then return end
+    BadAzsW_LastSpell = spellName
     BadAzsW_RawCast(spellName)
 end
 
@@ -307,7 +332,7 @@ function BadAzsArms()
     elseif BadAzsW_Ready("Bloodthirst") then BadAzsW_Cast("Bloodthirst") end
 
     local hasRend = BadAzsW_TargetHasDebuff("Ability_Gouge")
-    if not hasRend and thp > 20 then BadAzsW_Cast("Rend") end
+    if not hasRend and thp > 20 and not BadAzsW_IsImmune("Rend") then BadAzsW_Cast("Rend") end
 
     if BadAzsW_Ready("Master Strike") then BadAzsW_Cast("Master Strike") end
 
